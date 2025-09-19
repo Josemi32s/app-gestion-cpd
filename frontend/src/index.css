@@ -2,16 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 0;
+/* Tabla responsiva sin scroll horizontal */
+.responsive-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
 }
 
-.loading {
-  @apply text-blue-500 font-semibold;
+.responsive-table th,
+.responsive-table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: 8px;
+  text-align: left;
 }
 
-.error {
-  @apply text-red-500 bg-red-50 p-3 rounded-md mb-4;
+/* En pantallas pequeñas */
+@media (max-width: 768px) {
+  .responsive-table th,
+  .responsive-table td {
+    padding: 6px 4px;
+    font-size: 0.85rem;
+  }
+
+  /* Ocultar columnas no esenciales en móvil */
+  .hide-mobile {
+    display: none;
+  }
+
+  .mobile-expanded {
+    display: block;
+    width: 100%;
+    background: #f9fafb;
+    padding: 12px;
+    margin-top: 4px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .mobile-expanded p {
+    margin: 4px 0;
+    font-size: 0.875rem;
+  }
+
+  .mobile-expanded span.label {
+    font-weight: 600;
+    color: #374151;
+  }
 }
+

@@ -40,6 +40,20 @@ def actualizar_usuario(usuario_id: int, usuario: schemas.UsuarioCreate, db: Sess
     db.refresh(db_usuario)
     return db_usuario
 
+@router.patch("/{usuario_id}", response_model=schemas.Usuario)
+def actualizar_usuario_parcial(usuario_id: int, usuario: schemas.UsuarioUpdate, db: Session = Depends(database.get_db)):
+    db_usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+    if db_usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    for key, value in usuario.dict(exclude_unset=True).items():
+        if value is not None:
+            setattr(db_usuario, key, value)
+    
+    db.commit()
+    db.refresh(db_usuario)
+    return db_usuario
+
 @router.delete("/{usuario_id}")
 def eliminar_usuario(usuario_id: int, db: Session = Depends(database.get_db)):
     db_usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()

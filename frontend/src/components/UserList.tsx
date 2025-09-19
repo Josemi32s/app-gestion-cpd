@@ -1,73 +1,55 @@
 // src/components/UserList.tsx
-import React, { useEffect, useState } from 'react';
-import { api, getRoles } from '../services/api';
-import type{ Usuario, Rol } from '../types';
+import React, { useState } from 'react';
+import { useUsuarios } from '../hooks/useUsuarios';
 import UserForm from './UserForm';
+import UserActions from './UserActions';
 import toast, { Toaster } from 'react-hot-toast';
+import Modal from './ui/Modal';
+import { updateUsuario } from '../services/api';
 
 const UserList = () => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [roles, setRoles] = useState<Rol[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const { usuarios: allUsuarios, roles, loading, error, refetch } = useUsuarios();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<'activos' | 'inactivos'>('activos');
 
-  const fetchUsuarios = async () => {
+  // Filtrar usuarios según pestaña (sin reordenar, mantienen orden original)
+  const usuariosFiltrados = allUsuarios.filter(user => 
+    activeTab === 'activos' ? user.estado === 'activo' : user.estado === 'inactivo'
+  );
+
+  const handleUserCreatedOrUpdated = () => {
+    refetch();
+  };
+
+  // Función para activar usuario
+  const handleActivarUsuario = async (usuarioId: number) => {
     try {
-      const response = await api.get<Usuario[]>('/usuarios');
-      setUsuarios(response.data);
+      await updateUsuario(usuarioId, { estado: 'activo' });
+      toast.success('✅ Usuario activado correctamente');
+      refetch();
     } catch (err: any) {
-      setError('Error al cargar usuarios: ' + err.message);
-      console.error(err);
+      toast.error('❌ Error al activar usuario: ' + (err.response?.data?.detail || err.message));
     }
   };
 
-  const fetchRoles = async () => {
-    try {
-      const rolesData = await getRoles();
-      setRoles(rolesData);
-    } catch (err: any) {
-      console.error('Error al cargar roles:', err);
-    }
-  };
-
-  useEffect(() => {
-    Promise.all([fetchUsuarios(), fetchRoles()]).finally(() => setLoading(false));
-  }, []);
-
-  // Obtener nombre real del rol desde la lista de roles
-  const getRolNombre = (rolId: number) => {
-    const rol = roles.find(r => r.id === rolId);
-    return rol ? rol.nombre : 'Desconocido';
-  };
-
-  // Mapeo inteligente: cualquier variante → grupo estándar
+  // Mapeo de grupos (manteniendo tu lógica)
   const mapearGrupo = (nombreRol: string): string => {
     const normalizado = nombreRol.toLowerCase().trim();
-
     if (normalizado.includes('jefe')) return 'Jefes de Turno';
     if (normalizado.includes('operador')) return 'Operador';
     if (normalizado.includes('emc')) return 'EMC';
-
-    return 'Otros'; // Solo si no coincide con ninguno
+    return 'Otros';
   };
 
-  // Grupos fijos en orden deseado
   const gruposOrdenados = ['Jefes de Turno', 'Operador', 'EMC'];
 
-  // Agrupar usuarios
   const usuariosAgrupados = () => {
-    const grupos: Record<string, Usuario[]> = {};
-
-    // Inicializar grupos
-    gruposOrdenados.forEach(grupo => {
-      grupos[grupo] = [];
-    });
+    const grupos: Record<string, any[]> = {};
+    gruposOrdenados.forEach(grupo => grupos[grupo] = []);
     grupos['Otros'] = [];
 
-    // Asignar cada usuario a un grupo
-    usuarios.forEach(usuario => {
-      const nombreRol = getRolNombre(usuario.rol_id);
+    usuariosFiltrados.forEach(usuario => {
+      const nombreRol = roles.find(r => r.id === usuario.rol_id)?.nombre || 'Desconocido';
       const grupo = mapearGrupo(nombreRol);
       grupos[grupo].push(usuario);
     });
@@ -80,35 +62,52 @@ const UserList = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleUserCreated = () => {
-    setShowForm(false);
-    fetchUsuarios();
-    toast.success('Usuario creado correctamente', {
-      duration: 3000,
-      position: 'top-right',
-    });
-  };
-
   const grupos = usuariosAgrupados();
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-screen-xl mx-auto">
       <Toaster />
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
+        {activeTab === 'activos' && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition"
+          >
+            + Nuevo Usuario
+          </button>
+        )}
+      </div>
+
+      {/* Pestañas */}
+      <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg mb-6 w-fit">
         <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition"
+          onClick={() => setActiveTab('activos')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+            activeTab === 'activos'
+              ? 'bg-white text-blue-700 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
         >
-          + Nuevo Usuario
+          Activos ({allUsuarios.filter(u => u.estado === 'activo').length})
+        </button>
+        <button
+          onClick={() => setActiveTab('inactivos')}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+            activeTab === 'inactivos'
+              ? 'bg-white text-blue-700 shadow-sm'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Inactivos ({allUsuarios.filter(u => u.estado === 'inactivo').length})
         </button>
       </div>
 
       {error && <div className="error">{error}</div>}
 
       {loading ? (
-        <p className="loading">Cargando usuarios y roles...</p>
+        <p className="loading">Cargando...</p>
       ) : (
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
           <table className="min-w-full">
@@ -123,6 +122,7 @@ const UserList = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ingreso</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salida</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -130,10 +130,8 @@ const UserList = () => {
                 const usuariosDelGrupo = grupos[grupo] || [];
                 if (usuariosDelGrupo.length === 0) return null;
 
-                // Definir colores por grupo
                 let bgColor = 'bg-blue-50';
                 let textColor = 'text-blue-800';
-
                 if (grupo === 'Operador') {
                   bgColor = 'bg-green-50';
                   textColor = 'text-green-800';
@@ -144,17 +142,17 @@ const UserList = () => {
 
                 return (
                   <React.Fragment key={grupo}>
-                    {/* Separador de grupo */}
                     <tr className={bgColor}>
-                      <td colSpan={9} className={`px-6 py-2 font-semibold ${textColor}`}>
+                      <td colSpan={10} className={`px-6 py-2 font-semibold ${textColor}`}>
                         {grupo} ({usuariosDelGrupo.length})
                       </td>
                     </tr>
-                    {/* Usuarios del grupo */}
                     {usuariosDelGrupo.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getRolNombre(user.rol_id)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.nombres}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {roles.find(r => r.id === user.rol_id)?.nombre || 'Desconocido'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.nombres}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.apellidos}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telefono || '-'}</td>
@@ -170,24 +168,41 @@ const UserList = () => {
                             {user.estado === 'activo' ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {activeTab === 'activos' ? (
+                            <UserActions
+                              usuario={user}
+                              roles={roles}
+                              onUserUpdated={handleUserCreatedOrUpdated}
+                            />
+                          ) : (
+                            <button
+                              onClick={() => handleActivarUsuario(user.id)}
+                              className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
+                            >
+                              Activar
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </React.Fragment>
                 );
               })}
 
-              {/* Mostrar "Otros" solo si hay usuarios no clasificados */}
               {grupos['Otros'].length > 0 && (
                 <>
                   <tr className="bg-orange-50">
-                    <td colSpan={9} className="px-6 py-2 font-semibold text-orange-800">
+                    <td colSpan={10} className="px-6 py-2 font-semibold text-orange-800">
                       Otros ({grupos['Otros'].length})
                     </td>
                   </tr>
                   {grupos['Otros'].map((user) => (
                     <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getRolNombre(user.rol_id)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.nombres}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {roles.find(r => r.id === user.rol_id)?.nombre || 'Desconocido'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.nombres}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.apellidos}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telefono || '-'}</td>
@@ -203,6 +218,22 @@ const UserList = () => {
                           {user.estado === 'activo' ? 'Activo' : 'Inactivo'}
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {activeTab === 'activos' ? (
+                          <UserActions
+                            usuario={user}
+                            roles={roles}
+                            onUserUpdated={handleUserCreatedOrUpdated}
+                          />
+                        ) : (
+                          <button
+                            onClick={() => handleActivarUsuario(user.id)}
+                            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
+                          >
+                            Activar
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </>
@@ -212,26 +243,22 @@ const UserList = () => {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Crear Nuevo Usuario</h2>
-              <button
-                onClick={() => setShowForm(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                &times;
-              </button>
-            </div>
-            <UserForm 
-              roles={roles} 
-              onUserCreated={handleUserCreated} 
-              onCancel={() => setShowForm(false)} 
-            />
-          </div>
-        </div>
-      )}
+      {/* Modal Crear Usuario */}
+      <Modal
+        isOpen={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        title="Crear Nuevo Usuario"
+      >
+        <UserForm
+          roles={roles}
+          onUserCreated={() => {
+            setShowCreateForm(false);
+            handleUserCreatedOrUpdated();
+            toast.success('Usuario creado correctamente');
+          }}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      </Modal>
     </div>
   );
 };
