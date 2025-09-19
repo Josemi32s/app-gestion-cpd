@@ -1,8 +1,9 @@
 // src/components/UserList.tsx
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { api, getRoles } from '../services/api';
-import type { Usuario, Rol } from '../types';
+import type{ Usuario, Rol } from '../types';
 import UserForm from './UserForm';
+import toast, { Toaster } from 'react-hot-toast';
 
 const UserList = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -34,9 +35,44 @@ const UserList = () => {
     Promise.all([fetchUsuarios(), fetchRoles()]).finally(() => setLoading(false));
   }, []);
 
+  // Obtener nombre real del rol desde la lista de roles
   const getRolNombre = (rolId: number) => {
     const rol = roles.find(r => r.id === rolId);
     return rol ? rol.nombre : 'Desconocido';
+  };
+
+  // Mapeo inteligente: cualquier variante → grupo estándar
+  const mapearGrupo = (nombreRol: string): string => {
+    const normalizado = nombreRol.toLowerCase().trim();
+
+    if (normalizado.includes('jefe')) return 'Jefes de Turno';
+    if (normalizado.includes('operador')) return 'Operador';
+    if (normalizado.includes('emc')) return 'EMC';
+
+    return 'Otros'; // Solo si no coincide con ninguno
+  };
+
+  // Grupos fijos en orden deseado
+  const gruposOrdenados = ['Jefes de Turno', 'Operador', 'EMC'];
+
+  // Agrupar usuarios
+  const usuariosAgrupados = () => {
+    const grupos: Record<string, Usuario[]> = {};
+
+    // Inicializar grupos
+    gruposOrdenados.forEach(grupo => {
+      grupos[grupo] = [];
+    });
+    grupos['Otros'] = [];
+
+    // Asignar cada usuario a un grupo
+    usuarios.forEach(usuario => {
+      const nombreRol = getRolNombre(usuario.rol_id);
+      const grupo = mapearGrupo(nombreRol);
+      grupos[grupo].push(usuario);
+    });
+
+    return grupos;
   };
 
   const formatDate = (dateString: string | null) => {
@@ -47,10 +83,18 @@ const UserList = () => {
   const handleUserCreated = () => {
     setShowForm(false);
     fetchUsuarios();
+    toast.success('Usuario creado correctamente', {
+      duration: 3000,
+      position: 'top-right',
+    });
   };
+
+  const grupos = usuariosAgrupados();
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      <Toaster />
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Gestión de Usuarios</h1>
         <button
@@ -82,27 +126,87 @@ const UserList = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {usuarios.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getRolNombre(user.rol_id)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{user.nombres}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.apellidos}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telefono || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.cumple_anios)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_ingreso)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_salida)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.estado === 'activo' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {user.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {gruposOrdenados.map(grupo => {
+                const usuariosDelGrupo = grupos[grupo] || [];
+                if (usuariosDelGrupo.length === 0) return null;
+
+                // Definir colores por grupo
+                let bgColor = 'bg-blue-50';
+                let textColor = 'text-blue-800';
+
+                if (grupo === 'Operador') {
+                  bgColor = 'bg-green-50';
+                  textColor = 'text-green-800';
+                } else if (grupo === 'EMC') {
+                  bgColor = 'bg-purple-50';
+                  textColor = 'text-purple-800';
+                }
+
+                return (
+                  <React.Fragment key={grupo}>
+                    {/* Separador de grupo */}
+                    <tr className={bgColor}>
+                      <td colSpan={9} className={`px-6 py-2 font-semibold ${textColor}`}>
+                        {grupo} ({usuariosDelGrupo.length})
+                      </td>
+                    </tr>
+                    {/* Usuarios del grupo */}
+                    {usuariosDelGrupo.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getRolNombre(user.rol_id)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.nombres}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.apellidos}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telefono || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.cumple_anios)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_ingreso)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_salida)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.estado === 'activo' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {user.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Mostrar "Otros" solo si hay usuarios no clasificados */}
+              {grupos['Otros'].length > 0 && (
+                <>
+                  <tr className="bg-orange-50">
+                    <td colSpan={9} className="px-6 py-2 font-semibold text-orange-800">
+                      Otros ({grupos['Otros'].length})
+                    </td>
+                  </tr>
+                  {grupos['Otros'].map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{getRolNombre(user.rol_id)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{user.nombres}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.apellidos}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.usuario}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.telefono || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.cumple_anios)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_ingreso)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.fecha_salida)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.estado === 'activo' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </>
+              )}
             </tbody>
           </table>
         </div>

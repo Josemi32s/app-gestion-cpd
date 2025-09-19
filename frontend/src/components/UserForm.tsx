@@ -1,5 +1,5 @@
 // src/components/UserForm.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import type{ UsuarioCreate, Rol } from '../types';
 
@@ -15,31 +15,125 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
     apellidos: '',
     usuario: '',
     fecha_ingreso: new Date().toISOString().split('T')[0],
-    estado: 'activo', // Siempre activo
+    estado: 'activo',
     rol_id: roles.length > 0 ? roles[0].id : 1,
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formValid, setFormValid] = useState(false);
+
+  // Regex
+  const soloLetrasRegex = /^[a-zA-ZÀ-ÿ\s]+$/; // Letras, acentos, espacios
+  const soloNumerosRegex = /^[0-9]{0,9}$/;    // Solo números, máximo 9 dígitos
+
+  // Validar campo individual
+  const validarCampo = (name: string, value: string) => {
+    let error = '';
+
+    if (name === 'nombres' || name === 'apellidos') {
+      if (!value.trim()) {
+        error = `${name === 'nombres' ? 'Nombres' : 'Apellidos'} es obligatorio`;
+      } else if (!soloLetrasRegex.test(value)) {
+        error = 'Solo se permiten letras y espacios';
+      }
+    }
+
+    if (name === 'telefono') {
+      if (value && !soloNumerosRegex.test(value)) {
+        error = 'Solo se permiten números (máx. 9 dígitos)';
+      }
+    }
+
+    if (name === 'usuario') {
+      if (!value.trim()) {
+        error = 'Usuario es obligatorio';
+      }
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  // Validar todo el formulario
+  const validarFormulario = () => {
+    const nuevosErrores: Record<string, string> = {};
+
+    // Validar nombres
+    if (!formData.nombres.trim()) {
+      nuevosErrores.nombres = 'Nombres es obligatorio';
+    } else if (!soloLetrasRegex.test(formData.nombres)) {
+      nuevosErrores.nombres = 'Solo se permiten letras y espacios';
+    }
+
+    // Validar apellidos
+    if (!formData.apellidos.trim()) {
+      nuevosErrores.apellidos = 'Apellidos es obligatorio';
+    } else if (!soloLetrasRegex.test(formData.apellidos)) {
+      nuevosErrores.apellidos = 'Solo se permiten letras y espacios';
+    }
+
+    // Validar usuario
+    if (!formData.usuario.trim()) {
+      nuevosErrores.usuario = 'Usuario es obligatorio';
+    }
+
+    // Validar teléfono (opcional, pero si se ingresa, debe ser válido)
+    if (formData.telefono && !soloNumerosRegex.test(formData.telefono)) {
+      nuevosErrores.telefono = 'Solo se permiten números (máx. 9 dígitos)';
+    }
+
+    setErrors(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  // Efecto para validar cuando cambia formData
+  useEffect(() => {
+    setFormValid(validarFormulario());
+  }, [formData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name.includes('fecha') || name === 'rol_id' ? value : value
-    }));
+
+    // Validación en tiempo real para teléfono y nombres/apellidos
+    if (name === 'telefono') {
+      // Permitir solo números y hasta 9 dígitos
+      if (value === '' || soloNumerosRegex.test(value)) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validarCampo(name, value);
+      }
+      return;
+    }
+
+    if (name === 'nombres' || name === 'apellidos') {
+      // Permitir solo letras y espacios
+      if (soloLetrasRegex.test(value) || value === '') {
+        setFormData(prev => ({ ...prev, [name]: value }));
+        validarCampo(name, value);
+      }
+      return;
+    }
+
+    setFormData(prev => ({ ...prev, [name]: value }));
+    validarCampo(name, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validarFormulario()) {
+      return;
+    }
+
     setLoading(true);
-    setError(null);
 
     try {
       await api.post('/usuarios', formData);
       onUserCreated();
     } catch (err: any) {
-      setError('Error al crear usuario: ' + err.response?.data?.detail || err.message);
+      alert('Error al crear usuario: ' + (err.response?.data?.detail || err.message));
       console.error(err);
     } finally {
       setLoading(false);
@@ -48,9 +142,8 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && <div className="error">{error}</div>}
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Nombres */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Nombres *</label>
           <input
@@ -59,10 +152,19 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
             value={formData.nombres}
             onChange={handleChange}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 ${
+              errors.nombres 
+                ? 'border-red-500 bg-red-50' 
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
+            placeholder="Ej: Juan Carlos"
           />
+          {errors.nombres && (
+            <p className="mt-1 text-sm text-red-600">{errors.nombres}</p>
+          )}
         </div>
 
+        {/* Apellidos */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Apellidos *</label>
           <input
@@ -71,10 +173,19 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
             value={formData.apellidos}
             onChange={handleChange}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 ${
+              errors.apellidos 
+                ? 'border-red-500 bg-red-50' 
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
+            placeholder="Ej: Pérez Gómez"
           />
+          {errors.apellidos && (
+            <p className="mt-1 text-sm text-red-600">{errors.apellidos}</p>
+          )}
         </div>
 
+        {/* Usuario */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Usuario (login) *</label>
           <input
@@ -83,21 +194,41 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
             value={formData.usuario}
             onChange={handleChange}
             required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 ${
+              errors.usuario 
+                ? 'border-red-500 bg-red-50' 
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
+            placeholder="Ej: jcperez"
           />
+          {errors.usuario && (
+            <p className="mt-1 text-sm text-red-600">{errors.usuario}</p>
+          )}
         </div>
 
+        {/* Teléfono */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+          <label className="block text-sm font-medium text-gray-700">Teléfono (opcional)</label>
           <input
-            type="text"
+            type="tel"
             name="telefono"
             value={formData.telefono || ''}
             onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            maxLength={9}
+            className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 ${
+              errors.telefono 
+                ? 'border-red-500 bg-red-50' 
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
+            placeholder="Ej: 612345678"
           />
+          {errors.telefono && (
+            <p className="mt-1 text-sm text-red-600">{errors.telefono}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500">Máximo 9 dígitos, solo números</p>
         </div>
 
+        {/* Cumpleaños */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Cumpleaños</label>
           <input
@@ -109,6 +240,7 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
           />
         </div>
 
+        {/* Fecha Ingreso */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Fecha Ingreso *</label>
           <input
@@ -121,6 +253,7 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
           />
         </div>
 
+        {/* Rol */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Rol *</label>
           <select
@@ -136,6 +269,7 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
           </select>
         </div>
 
+        {/* Estado (siempre activo y deshabilitado) */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Estado</label>
           <input
@@ -158,8 +292,12 @@ const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
         </button>
         <button
           type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          disabled={loading || !formValid}
+          className={`px-4 py-2 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            loading || !formValid
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700'
+          }`}
         >
           {loading ? 'Creando...' : 'Crear Usuario'}
         </button>
