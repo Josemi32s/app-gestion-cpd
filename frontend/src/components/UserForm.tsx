@@ -1,21 +1,22 @@
 // src/components/UserForm.tsx
 import { useState } from 'react';
 import { api } from '../services/api';
-import type { UsuarioCreate } from '../types';
+import type{ UsuarioCreate, Rol } from '../types';
 
 interface UserFormProps {
+  roles: Rol[];
   onUserCreated: () => void;
   onCancel: () => void;
 }
 
-const UserForm = ({ onUserCreated, onCancel }: UserFormProps) => {
+const UserForm = ({ roles, onUserCreated, onCancel }: UserFormProps) => {
   const [formData, setFormData] = useState<UsuarioCreate>({
     nombres: '',
     apellidos: '',
     usuario: '',
     fecha_ingreso: new Date().toISOString().split('T')[0],
-    estado: 'activo',
-    rol_id: 1, // Por defecto jefe (ajustar según tu DB)
+    estado: 'activo', // Siempre activo
+    rol_id: roles.length > 0 ? roles[0].id : 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ const UserForm = ({ onUserCreated, onCancel }: UserFormProps) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name.includes('fecha') ? value : value
+      [name]: name.includes('fecha') || name === 'rol_id' ? value : value
     }));
   };
 
@@ -87,18 +88,6 @@ const UserForm = ({ onUserCreated, onCancel }: UserFormProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Fecha Ingreso *</label>
-          <input
-            type="date"
-            name="fecha_ingreso"
-            value={formData.fecha_ingreso}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-gray-700">Teléfono</label>
           <input
             type="text"
@@ -121,21 +110,19 @@ const UserForm = ({ onUserCreated, onCancel }: UserFormProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Estado</label>
-          <select
-            name="estado"
-            value={formData.estado}
+          <label className="block text-sm font-medium text-gray-700">Fecha Ingreso *</label>
+          <input
+            type="date"
+            name="fecha_ingreso"
+            value={formData.fecha_ingreso}
             onChange={handleChange}
+            required
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="activo">Activo</option>
-            <option value="baja">Baja</option>
-            <option value="suspendido">Suspendido</option>
-          </select>
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Rol ID *</label>
+          <label className="block text-sm font-medium text-gray-700">Rol *</label>
           <select
             name="rol_id"
             value={formData.rol_id}
@@ -143,10 +130,21 @@ const UserForm = ({ onUserCreated, onCancel }: UserFormProps) => {
             required
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value={1}>Jefe (ID 1)</option>
-            <option value={2}>Operador (ID 2)</option>
-            <option value={3}>EMC (ID 3)</option>
+            {roles.map(rol => (
+              <option key={rol.id} value={rol.id}>{rol.nombre}</option>
+            ))}
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Estado</label>
+          <input
+            type="text"
+            value="Activo"
+            disabled
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 text-gray-500 cursor-not-allowed"
+          />
+          <input type="hidden" name="estado" value="activo" />
         </div>
       </div>
 
