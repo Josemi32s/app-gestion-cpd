@@ -30,3 +30,16 @@ export interface UsuarioCreate {
   estado?: string;
   rol_id: number;
 }
+
+export interface Turno {
+  id: number;
+  usuario_id: number;
+  fecha: string; // "YYYY-MM-DD"
+  turno: string; // "M", "T", "N", "FM1", "v", "c", "b", etc.
+  es_reten: boolean;
+  generado_automático: boolean;
+  modificado_manual: boolean;
+  estado: string;
+  created_at: string;
+  updated_at: string;
+}

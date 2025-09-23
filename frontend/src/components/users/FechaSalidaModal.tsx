@@ -1,6 +1,6 @@
 // src/components/users/FechaSalidaModal.tsx
 import React, { useState } from 'react';
-import Modal from './ui/Modal';
+import Modal from '../ui/Modal';
 
 interface FechaSalidaModalProps {
   isOpen: boolean;

@@ -1,11 +1,11 @@
 // src/components/UserList.tsx
 import React, { useState } from 'react';
-import { useUsuarios } from '../hooks/useUsuarios';
+import { useUsuarios } from '../../hooks/useUsuarios';
 import UserForm from './UserForm';
 import UserActions from './UserActions';
 import toast, { Toaster } from 'react-hot-toast';
-import Modal from './ui/Modal';
-import { updateUsuario } from '../services/api';
+import Modal from '../ui/Modal';
+import { updateUsuario } from '../../services/api';
 
 const UserList = () => {
   const { usuarios: allUsuarios, roles, loading, error, refetch } = useUsuarios();
@@ -65,7 +65,7 @@ const UserList = () => {
   const grupos = usuariosAgrupados();
 
   return (
-    <div className="p-6 max-w-screen-xl mx-auto">
+    <div className="max-w-screen-xl mx-auto">
       <Toaster />
 
       <div className="flex justify-between items-center mb-6">

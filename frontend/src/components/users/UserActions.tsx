@@ -1,11 +1,11 @@
 // src/components/users/UserActions.tsx
 import { useState } from 'react';
-import type { Usuario } from '../types';
+import type { Usuario } from '../../types';
 import UserEditForm from './UserEditForm';
-import ConfirmationDialog from './ui/ConfirmationDialog';
-import { updateUsuario } from '../services/api';
+import ConfirmationDialog from '../ui/ConfirmationDialog';
+import { updateUsuario } from '../../services/api';
 import toast from 'react-hot-toast';
-import Modal from './ui/Modal';
+import Modal from '../ui/Modal';
 import FechaSalidaModal from './FechaSalidaModal';
 
 interface UserActionsProps {
