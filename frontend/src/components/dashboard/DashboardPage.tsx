@@ -8,7 +8,7 @@ const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios'>('turnos');
 
   return (
-    <div className="pt-10 size-min mx-auto">
+    <div className="p-10 size-min mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">🛠️ Gestión Operación - CPD</h1>
 
       <TabGroup

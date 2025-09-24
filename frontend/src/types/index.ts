@@ -34,12 +34,22 @@ export interface UsuarioCreate {
 export interface Turno {
   id: number;
   usuario_id: number;
-  fecha: string; // "YYYY-MM-DD"
-  turno: string; // "M", "T", "N", "FM1", "v", "c", "b", etc.
+  fecha: string; 
+  turno: string; 
   es_reten: boolean;
   generado_automático: boolean;
   modificado_manual: boolean;
   estado: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Ausencia {
+  id: number;
+  usuario_id: number;
+  fecha_inicio: string;
+  fecha_fin: string;
+  tipo: string;
+  descripcion: string | null;
+  created_at: string;
 }

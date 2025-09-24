@@ -10,7 +10,7 @@ router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 @router.post("/", response_model=schemas.Usuario)
 def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(database.get_db)):
-    db_usuario = models.Usuario(**usuario.dict())
+    db_usuario = models.Usuario(**usuario.model_dump())
     db.add(db_usuario)
     db.commit()
     db.refresh(db_usuario)
@@ -33,7 +33,7 @@ def actualizar_usuario(usuario_id: int, usuario: schemas.UsuarioCreate, db: Sess
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    for key, value in usuario.dict().items():
+    for key, value in usuario.model_dump().items():
         setattr(db_usuario, key, value)
     
     db.commit()
@@ -46,7 +46,7 @@ def actualizar_usuario_parcial(usuario_id: int, usuario: schemas.UsuarioUpdate, 
     if db_usuario is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    for key, value in usuario.dict(exclude_unset=True).items():
+    for key, value in usuario.model_dump(exclude_unset=True).items():
         if value is not None:
             setattr(db_usuario, key, value)
     

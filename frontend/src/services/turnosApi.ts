@@ -7,17 +7,19 @@ export const getTurnosPorUsuarioYMes = async (usuarioId: number, year: number, m
   return response.data;
 };
 
+// ✅ CREAR TURNO
 export const asignarTurno = async (data: {
   usuario_id: number;
   fecha: string;
   turno: string;
   es_reten?: boolean;
 }) => {
-  const response = await api.post('/turnos/', data);
+  const response = await api.post<Turno>('/turnos/', data);
   return response.data;
 };
 
+// ✅ ACTUALIZAR TURNO (si necesitas editar)
 export const actualizarTurno = async (id: number, data: Partial<Turno>) => {
-  const response = await api.patch(`/turnos/${id}`, data);
+  const response = await api.patch<Turno>(`/turnos/${id}`, data);
   return response.data;
 };

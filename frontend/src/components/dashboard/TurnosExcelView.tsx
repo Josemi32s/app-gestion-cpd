@@ -70,7 +70,11 @@ const TurnosExcelView = () => {
     refetchTurnos(); // Recargar turnos
   };
 
-  const getCellColor = (turno: string | null, isWeekend: boolean) => {
+  const getCellColor = (turno: string | null, isWeekend: boolean, esReten: boolean) => {
+    if (esReten) {
+      return 'bg-blue-200 border border-blue-400'; // Celeste
+    }
+
     if (!turno) return 'bg-white border border-gray-300';
 
     if (turno === 'v' || turno === 'c') return 'bg-yellow-100 border border-yellow-300';
@@ -179,7 +183,7 @@ const TurnosExcelView = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {usuariosActivos.map(usuario => (
                   <tr key={usuario.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-3 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+                    <td className="border border-gray-300 px-2 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
                       {usuario.nombres} {usuario.apellidos}
                     </td>
                     {days.map((day) => {
@@ -190,7 +194,7 @@ const TurnosExcelView = () => {
                       return (
                         <td
                           key={`${usuario.id}-${day.date}`}
-                          className={`border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold ${getCellColor(turno, day.isWeekend)}`}
+                          className={`border border-gray-300 px-0.5 py-0.5 text-center cursor-pointer text-xs font-bold ${getCellColor(turno, day.isWeekend, turnoObj?.es_reten || false)}`}
                           onClick={() => handleCellSelect(usuario, day.date)}
                         >
                           {turno || '-'}
