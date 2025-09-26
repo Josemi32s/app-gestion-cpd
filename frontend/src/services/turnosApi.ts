@@ -23,3 +23,8 @@ export const actualizarTurno = async (id: number, data: Partial<Turno>) => {
   const response = await api.patch<Turno>(`/turnos/${id}`, data);
   return response.data;
 };
+
+export const asignarCumpleanosMes = async (year: number, month: number) => {
+  const response = await api.post(`/turnos/cumpleanos/mes/${year}/${month}`);
+  return response.data;
+};

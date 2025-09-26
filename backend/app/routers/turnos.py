@@ -2,7 +2,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models.turno import Turno as TurnoModel  # Modelo de SQLAlchemy
-from app.schemas.turno import Turno, TurnoCreate, TurnoUpdate  # Esquemas Pydantic
+from app.schemas.turno import Turno, TurnoCreate, TurnoUpdate # Esquemas Pydantic
+from app.models import usuario as models
 from typing import List
 from app import database
 from datetime import date
@@ -49,3 +50,45 @@ def actualizar_turno(turno_id: int, turno: TurnoUpdate, db: Session = Depends(da
     db.commit()
     db.refresh(db_turno)
     return db_turno
+
+@router.post("/cumpleanos/mes/{year}/{month}")
+def asignar_cumpleanos_mes(year: int, month: int, db: Session = Depends(database.get_db)):
+    # Obtener todos los usuarios activos con cumpleaños definido
+    usuarios = db.query(models.Usuario).filter(
+        models.Usuario.estado == "activo",
+        models.Usuario.cumple_anios.isnot(None)
+    ).all()
+    
+    turnos_creados = 0
+    
+    for usuario in usuarios:
+        # Extraer día y mes del cumpleaños del usuario
+        cumple_dia = usuario.cumple_anios.day
+        cumple_mes = usuario.cumple_anios.month
+        
+        # Verificar si el cumpleaños cae en el mes que estamos procesando
+        if cumple_mes == month + 1:  # Frontend usa 0-11, BD usa 1-12
+            fecha_cumple = date(year, cumple_mes, cumple_dia)
+            
+            # Verificar si ya existe un turno para este día
+            turno_existente = db.query(TurnoModel).filter(
+                TurnoModel.usuario_id == usuario.id,
+                TurnoModel.fecha == fecha_cumple
+            ).first()
+            
+            # Solo crear si no existe
+            if not turno_existente:
+                nuevo_turno = TurnoModel(
+                    usuario_id=usuario.id,
+                    fecha=fecha_cumple,
+                    turno='c',
+                    es_reten=False,
+                    generado_automático=True,
+                    modificado_manual=False,
+                    estado="activo"
+                )
+                db.add(nuevo_turno)
+                turnos_creados += 1
+    
+    db.commit()
+    return {"mensaje": f"Cumpleaños asignados: {turnos_creados}"}

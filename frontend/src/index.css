@@ -51,3 +51,35 @@
   }
 }
 
+/* Highlighting para Jefes (azul) */
+.highlight-jefe-row {
+  background-color: #dbeafe !important; /* bg-blue-100 */
+}
+.highlight-jefe-cell {
+  background-color: #dbeafe !important;
+}
+
+/* Highlighting para Operadores (verde) */
+.highlight-operador-row {
+  background-color: #dcfce7 !important; /* bg-green-100 */
+}
+.highlight-operador-cell {
+  background-color: #dcfce7 !important;
+}
+
+/* Highlighting para EMC (morado) */
+.highlight-emc-row {
+  background-color: #f3e8ff !important; /* bg-purple-100 */
+}
+.highlight-emc-cell {
+  background-color: #f3e8ff !important;
+}
+
+/* Highlighting vertical (columna) - azul neutro */
+.highlight-column {
+  background-color: #dbeafe !important;
+}
+/* Highlighting para encabezado de columna */
+.highlight-column-header {
+  background-color: #dbeafe !important; /* bg-blue-200 */
+}

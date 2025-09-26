@@ -1,11 +1,11 @@
 // src/components/dashboard/TurnosExcelView.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUsuarios } from '../../hooks/useUsuarios';
-import { useTurnosPorMes } from '../../hooks/useTurnos'; // ← NUEVO
+import { useTurnosPorMes } from '../../hooks/useTurnos';
 import CellSelectorModal from '../calendar/CellSelectorModal';
-import type { Usuario, Turno } from '../../types'; // ← Añadido Turno
+import { asignarCumpleanosMes } from '../../services/turnosApi';
+import type { Usuario, Turno } from '../../types';
 
-// ✅ Solo los días del mes actual (sin días de otros meses)
 const getDaysOfMonth = (year: number, month: number) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days: { day: number; date: string; isWeekend: boolean }[] = [];
@@ -19,7 +19,6 @@ const getDaysOfMonth = (year: number, month: number) => {
   return days;
 };
 
-// ✅ Obtener nombre del día de la semana (en español, empezando por lunes)
 const getDayName = (dateString: string) => {
   const dayIndex = new Date(dateString).getDay();
   const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -32,15 +31,29 @@ const TurnosExcelView = () => {
   const [selectedFechas, setSelectedFechas] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   
-  // Solo 2025 por ahora (hasta que haya datos en otros años)
+  // ✅ Estado para crosshair highlighting
+  const [hoverUsuarioId, setHoverUsuarioId] = useState<number | null>(null);
+  const [hoverFecha, setHoverFecha] = useState<string | null>(null);
+  
   const availableYears = [2025];
   const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
 
-  // ✅ Cargar turnos del mes
   const { turnos, loading: loadingTurnos, refetch: refetchTurnos } = useTurnosPorMes(selectedYear, selectedMonth);
 
-  // ✅ Crear mapa: fecha → usuarioId → turno
+  useEffect(() => {
+    const aplicarCumpleanosAuto = async () => {
+      try {
+        await asignarCumpleanosMes(selectedYear, selectedMonth);
+        await refetchTurnos();
+      } catch (err) {
+        console.warn('No se pudieron asignar cumpleaños automáticos');
+      }
+    };
+    
+    aplicarCumpleanosAuto();
+  }, [selectedYear, selectedMonth]);
+
   const turnosMap = useMemo(() => {
     const map = new Map<string, Map<number, Turno>>();
     turnos.forEach(turno => {
@@ -64,31 +77,31 @@ const TurnosExcelView = () => {
     setSelectedFechas([]);
   };
 
-  // ✅ Callback para actualizar la vista después de asignar un turno
   const handleSuccess = () => {
     handleCloseModal();
-    refetchTurnos(); // Recargar turnos
+    refetchTurnos();
   };
 
-  const getCellColor = (turno: string | null, isWeekend: boolean, esReten: boolean) => {
-    if (esReten) {
-      return 'bg-blue-200 border border-blue-400'; // Celeste
-    }
-
+  const getCellColor = (turno: string | null, esReten: boolean) => {
+    if (esReten) return 'bg-blue-200 border border-blue-400';
     if (!turno) return 'bg-white border border-gray-300';
-
     if (turno === 'v' || turno === 'c') return 'bg-yellow-100 border border-yellow-300';
-    if (turno === 'd' || turno === 'b') return 'bg-gray-200 border border-gray-400';
-    if (['FM1', 'FM2', 'FN1', 'FN2'].includes(turno)) return 'bg-orange-100 border border-orange-300';
-    if (isWeekend) return 'bg-red-100 border border-red-300';
-    
+    if (turno === 'd') return 'bg-gray-300 border border-gray-500 text-white';
+    if (turno === 'b') return 'bg-red-200 border border-red-400';
+    if (['FM1', 'FM2'].includes(turno)) return 'bg-orange-100 border border-orange-300';
+    if (['FN1', 'FN2'].includes(turno)) return 'bg-purple-100 border border-purple-300';
     return 'bg-white border border-gray-300';
   };
 
   const days = getDaysOfMonth(selectedYear, selectedMonth);
   const usuariosActivos = usuarios.filter(u => u.estado === 'activo');
 
-  // Manejar navegación de meses
+  const usuariosActivosPorGrupo = {
+    jefes: usuariosActivos.filter(u => u.rol_id === 1),
+    operadores: usuariosActivos.filter(u => u.rol_id === 2),
+    emc: usuariosActivos.filter(u => u.rol_id === 3)
+  };
+
   const goToPreviousMonth = () => {
     if (selectedMonth === 0) {
       setSelectedMonth(11);
@@ -113,7 +126,6 @@ const TurnosExcelView = () => {
 
   return (
     <div className="space-y-6">
-      {/* Selector de año y mes + navegación */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center space-x-4">
           <select
@@ -154,56 +166,240 @@ const TurnosExcelView = () => {
         </div>
       </div>
 
-    <div className="overflow-x-auto">
+      <div className="overflow-x-auto">
         <div className="inline-block min-w-full align-middle">
           <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  {/* Números de día */}
-                  <th scope="col" className="border border-gray-300 px-2 py-2 bg-gray-100"></th>
-                  {days.map((day, index) => (
-                    <th key={`num-${index}`} scope="col" className="border border-gray-300 px-2 py-2 bg-gray-100 text-center w-12">
-                      {day.day}
-                    </th>
-                  ))}
-                </tr>
-                <tr>
-                  {/* Nombres de día */}
-                  <th scope="col" className="border border-gray-300 px-2 py-2 bg-gray-100 text-left font-medium text-gray-500 uppercase tracking-wider">
-                    Usuario
-                  </th>
-                  {days.map((day, index) => (
-                    <th key={`name-${index}`} scope="col" className="border border-gray-300 px-2 py-2 bg-gray-100 text-center w-12">
-                      <div className="text-xs font-medium text-gray-500">{getDayName(day.date)}</div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {usuariosActivos.map(usuario => (
-                  <tr key={usuario.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-2 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
-                      {usuario.nombres} {usuario.apellidos}
-                    </td>
-                    {days.map((day) => {
-                      // ✅ Obtener turno real del mapa
-                      const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
-                      const turno = turnoObj ? turnoObj.turno : null;
-                      
-                      return (
-                        <td
-                          key={`${usuario.id}-${day.date}`}
-                          className={`border border-gray-300 px-0.5 py-0.5 text-center cursor-pointer text-xs font-bold ${getCellColor(turno, day.isWeekend, turnoObj?.es_reten || false)}`}
-                          onClick={() => handleCellSelect(usuario, day.date)}
-                        >
-                          {turno || '-'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
+<thead className="bg-gray-50">
+  <tr>
+    <th 
+      scope="col" 
+      className="border border-gray-300 px-2 py-2 bg-gray-100 text-center w-16"
+      rowSpan={2}
+    >
+      <div className="transform -rotate-90 origin-center">
+        Rol
+      </div>
+    </th>
+    <th 
+      scope="col" 
+      className="border border-gray-300 px-2 py-2 bg-gray-100 text-center min-w-32"
+      rowSpan={2}
+    >
+      Usuario
+    </th>
+    {days.map((day, index) => (
+      <th 
+        key={`num-${index}`} 
+        scope="col" 
+        className={`border border-gray-300 px-2 py-2 bg-gray-100 text-center w-12 ${
+          hoverFecha === day.date ? 'highlight-column-header' : ''
+        }`}
+      >
+        {day.day}
+      </th>
+    ))}
+  </tr>
+  <tr>
+    {days.map((day, index) => {
+      const isWeekend = day.isWeekend;
+      return (
+        <th 
+          key={`name-${index}`} 
+          scope="col" 
+          className={`border border-gray-300 px-2 py-2 bg-gray-100 text-center w-12 ${
+            isWeekend 
+              ? 'text-red-600 font-bold' 
+              : 'text-gray-500'
+          } ${
+            hoverFecha === day.date ? 'highlight-column-header' : ''
+          }`}
+        >
+          <div className="text-xs font-medium">{getDayName(day.date)}</div>
+        </th>
+      );
+    })}
+  </tr>
+</thead>
+<tbody className="bg-white divide-y divide-gray-200">
+  {/* JEFES DE TURNO */}
+  {usuariosActivosPorGrupo.jefes.length > 0 && (
+    <>
+      {usuariosActivosPorGrupo.jefes.map((usuario, index) => (
+        <tr 
+          key={usuario.id} 
+          className={`
+            hover:bg-gray-50 transition-colors
+            ${hoverUsuarioId === usuario.id ? 'highlight-jefe-row' : ''}
+          `}
+        >
+          {/* Celda de Rol (solo en la primera fila de cada grupo) */}
+          {index === 0 && (
+            <td 
+              rowSpan={usuariosActivosPorGrupo.jefes.length} 
+              className="border border-gray-300 px-1 py-1 text-sm font-bold text-gray-900 whitespace-nowrap text-center align-middle bg-blue-50"
+            >
+              <div className="transform -rotate-90 origin-center whitespace-nowrap text-blue-800">
+                Jefes de Turno
+              </div>
+            </td>
+          )}
+          
+          <td className="border border-gray-300 px-2 py-2 text-sm font-medium text-gray-900 whitespace-nowrap min-w-32">
+            {usuario.nombres} {usuario.apellidos}
+          </td>
+          
+          {days.map((day) => {
+            const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
+            const turno = turnoObj ? turnoObj.turno : null;
+            const esReten = turnoObj ? turnoObj.es_reten : false;
+            
+            return (
+              <td
+                key={`${usuario.id}-${day.date}`}
+                className={`
+                  border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
+                  ${getCellColor(turno, esReten)}
+                  ${hoverUsuarioId === usuario.id ? 'highlight-jefe-cell' : ''}
+                  ${hoverFecha === day.date ? 'highlight-column' : ''}
+                `}
+                onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseEnter={() => {
+                  setHoverUsuarioId(usuario.id);
+                  setHoverFecha(day.date);
+                }}
+                onMouseLeave={() => {
+                  setHoverUsuarioId(null);
+                  setHoverFecha(null);
+                }}
+              >
+                {turno || '-'}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </>
+  )}
+
+  {/* OPERADORES */}
+  {usuariosActivosPorGrupo.operadores.length > 0 && (
+    <>
+      {usuariosActivosPorGrupo.operadores.map((usuario, index) => (
+        <tr 
+          key={usuario.id} 
+          className={`
+            hover:bg-gray-50 transition-colors
+            ${hoverUsuarioId === usuario.id ? 'highlight-operador-row' : ''}
+          `}
+        >
+          {index === 0 && (
+            <td 
+              rowSpan={usuariosActivosPorGrupo.operadores.length} 
+              className="border border-gray-300 px-1 py-1 text-center align-middle bg-green-50"
+            >
+              <div className="transform -rotate-90 origin-center whitespace-nowrap font-bold text-green-800">
+                Operadores
+              </div>
+            </td>
+          )}
+          
+          <td className="border border-gray-300 px-2 py-2 text-sm font-medium text-gray-900 whitespace-nowrap min-w-32">
+            {usuario.nombres} {usuario.apellidos}
+          </td>
+          
+          {days.map((day) => {
+            const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
+            const turno = turnoObj ? turnoObj.turno : null;
+            const esReten = turnoObj ? turnoObj.es_reten : false;
+            
+            return (
+              <td
+                key={`${usuario.id}-${day.date}`}
+                className={`
+                  border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
+                  ${getCellColor(turno, esReten)}
+                  ${hoverUsuarioId === usuario.id ? 'highlight-operador-cell' : ''}
+                  ${hoverFecha === day.date ? 'highlight-column' : ''}
+                `}
+                onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseEnter={() => {
+                  setHoverUsuarioId(usuario.id);
+                  setHoverFecha(day.date);
+                }}
+                onMouseLeave={() => {
+                  setHoverUsuarioId(null);
+                  setHoverFecha(null);
+                }}
+              >
+                {turno || '-'}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </>
+  )}
+
+  {/* EMC */}
+  {usuariosActivosPorGrupo.emc.length > 0 && (
+    <>
+      {usuariosActivosPorGrupo.emc.map((usuario, index) => (
+        <tr 
+          key={usuario.id} 
+          className={`
+            hover:bg-gray-50 transition-colors
+            ${hoverUsuarioId === usuario.id ? 'highlight-emc-row' : ''}
+          `}
+        >
+          {index === 0 && (
+            <td 
+              rowSpan={usuariosActivosPorGrupo.emc.length} 
+              className="border border-gray-300 px-1 py-1 text-center align-middle bg-purple-50"
+            >
+              <div className="transform -rotate-90 origin-center whitespace-nowrap font-bold text-purple-800">
+                EMC
+              </div>
+            </td>
+          )}
+          
+          <td className="border border-gray-300 px-2 py-2 text-sm font-medium text-gray-900 whitespace-nowrap min-w-32">
+            {usuario.nombres} {usuario.apellidos}
+          </td>
+          
+          {days.map((day) => {
+            const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
+            const turno = turnoObj ? turnoObj.turno : null;
+            const esReten = turnoObj ? turnoObj.es_reten : false;
+            
+            return (
+              <td
+                key={`${usuario.id}-${day.date}`}
+                className={`
+                  border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
+                  ${getCellColor(turno, esReten)}
+                  ${hoverUsuarioId === usuario.id ? 'highlight-emc-cell' : ''}
+                  ${hoverFecha === day.date ? 'highlight-column' : ''}
+                `}
+                onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseEnter={() => {
+                  setHoverUsuarioId(usuario.id);
+                  setHoverFecha(day.date);
+                }}
+                onMouseLeave={() => {
+                  setHoverUsuarioId(null);
+                  setHoverFecha(null);
+                }}
+              >
+                {turno || '-'}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </>
+  )}
+</tbody>
             </table>
           </div>
         </div>
@@ -213,7 +409,7 @@ const TurnosExcelView = () => {
         <CellSelectorModal
           isOpen={modalOpen}
           onClose={handleCloseModal}
-          onSuccess={handleSuccess} // ← Añadido
+          onSuccess={handleSuccess}
           usuario={selectedUsuario}
           fechasSeleccionadas={selectedFechas}
         />

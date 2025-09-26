@@ -37,13 +37,14 @@ const TurnosTab: React.FC<TurnosTabProps> = ({ usuario, fechas, onSuccess }) => 
   };
 
   const turnos = [
-    { value: 'M', label: 'Mañana' },
-    { value: 'T', label: 'Tarde' },
-    { value: 'N', label: 'Noche' },
-    { value: 'FM1', label: 'Mañana Casa (Jefe)' },
-    { value: 'FM2', label: 'Mañana Oficina (Operador)' },
-    { value: 'FN1', label: 'Noche Casa (Jefe)' },
-    { value: 'FN2', label: 'Noche Oficina (Operador)' }
+    { value: 'M', label: 'M (Mañana)' },
+    { value: 'T', label: 'T (Tarde)' },
+    { value: 'N', label: 'N (Noche)' },
+    { value: 'FM1', label: 'FM1 (Mañana Casa)' },
+    { value: 'FM2', label: 'FM2 (Mañana Oficina)' },
+    { value: 'FN1', label: 'FN1 (Noche Casa)' },
+    { value: 'FN2', label: 'FN2 (Noche Oficina)' },
+    { value: 'd', label: 'Descanso' }
   ];
 
   return (
