@@ -5,6 +5,7 @@ import { useTurnosPorMes } from '../../hooks/useTurnos';
 import CellSelectorModal from '../calendar/CellSelectorModal';
 import { asignarCumpleanosMes } from '../../services/turnosApi';
 import type { Usuario, Turno } from '../../types';
+import { exportToExcel } from '../../utils/exportToExcel';
 
 const getDaysOfMonth = (year: number, month: number) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -35,6 +36,10 @@ const TurnosExcelView = () => {
   const [hoverUsuarioId, setHoverUsuarioId] = useState<number | null>(null);
   const [hoverFecha, setHoverFecha] = useState<string | null>(null);
   
+  // ✅ Estados para selección de rango
+  const [startSelection, setStartSelection] = useState<{ usuario: Usuario; fecha: string } | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  
   const availableYears = [2025];
   const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
@@ -54,6 +59,22 @@ const TurnosExcelView = () => {
     aplicarCumpleanosAuto();
   }, [selectedYear, selectedMonth]);
 
+  // ✅ Event listener global para mouse up
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isSelecting && selectedFechas.length > 0) {
+        setModalOpen(true);
+      }
+      setIsSelecting(false);
+      setStartSelection(null);
+    };
+    
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [isSelecting, selectedFechas]);
+
   const turnosMap = useMemo(() => {
     const map = new Map<string, Map<number, Turno>>();
     turnos.forEach(turno => {
@@ -66,20 +87,62 @@ const TurnosExcelView = () => {
   }, [turnos]);
 
   const handleCellSelect = (usuario: Usuario, fecha: string) => {
+    // Solo para selección simple (clic sin arrastrar)
+    if (!isSelecting) {
+      setSelectedUsuario(usuario);
+      setSelectedFechas([fecha]);
+      setModalOpen(true);
+    }
+  };
+
+  // ✅ Manejadores para selección de rango
+  const handleMouseDown = (usuario: Usuario, fecha: string) => {
+    setStartSelection({ usuario, fecha });
+    setIsSelecting(true);
     setSelectedUsuario(usuario);
     setSelectedFechas([fecha]);
-    setModalOpen(true);
+  };
+
+  const handleMouseEnterWhileSelecting = (usuario: Usuario, fecha: string) => {
+    if (isSelecting && startSelection && startSelection.usuario.id === usuario.id) {
+      // Obtener rango de fechas ordenado
+      const startDate = new Date(startSelection.fecha);
+      const endDate = new Date(fecha);
+      const minDate = startDate < endDate ? startDate : endDate;
+      const maxDate = startDate > endDate ? startDate : endDate;
+      
+      const fechas = [];
+      for (let date = new Date(minDate); date <= maxDate; date.setDate(date.getDate() + 1)) {
+        fechas.push(date.toISOString().split('T')[0]);
+      }
+      
+      setSelectedUsuario(usuario);
+      setSelectedFechas(fechas);
+    }
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
     setSelectedUsuario(null);
     setSelectedFechas([]);
+    setIsSelecting(false);
+    setStartSelection(null);
   };
 
   const handleSuccess = () => {
     handleCloseModal();
     refetchTurnos();
+  };
+
+  const handleExportToExcel = () => {
+  const exportData = {
+    year: selectedYear,
+    month: selectedMonth,
+    usuarios: usuarios.filter(u => u.estado === 'activo'),
+    turnos: turnosMap
+  };
+  
+  exportToExcel(exportData);
   };
 
   const getCellColor = (turno: string | null, esReten: boolean) => {
@@ -163,6 +226,15 @@ const TurnosExcelView = () => {
           >
             Mes siguiente ►
           </button>
+            <button
+    onClick={handleExportToExcel}
+    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition flex items-center"
+  >
+    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    Exportar Excel
+  </button>
         </div>
       </div>
 
@@ -264,7 +336,9 @@ const TurnosExcelView = () => {
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
                 onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseDown={() => handleMouseDown(usuario, day.date)}
                 onMouseEnter={() => {
+                  handleMouseEnterWhileSelecting(usuario, day.date);
                   setHoverUsuarioId(usuario.id);
                   setHoverFecha(day.date);
                 }}
@@ -323,7 +397,9 @@ const TurnosExcelView = () => {
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
                 onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseDown={() => handleMouseDown(usuario, day.date)}
                 onMouseEnter={() => {
+                  handleMouseEnterWhileSelecting(usuario, day.date);
                   setHoverUsuarioId(usuario.id);
                   setHoverFecha(day.date);
                 }}
@@ -382,7 +458,9 @@ const TurnosExcelView = () => {
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
                 onClick={() => handleCellSelect(usuario, day.date)}
+                onMouseDown={() => handleMouseDown(usuario, day.date)}
                 onMouseEnter={() => {
+                  handleMouseEnterWhileSelecting(usuario, day.date);
                   setHoverUsuarioId(usuario.id);
                   setHoverFecha(day.date);
                 }}
