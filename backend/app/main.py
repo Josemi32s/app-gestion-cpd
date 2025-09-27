@@ -1,10 +1,10 @@
 # backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import usuarios, roles,turnos,ausencias
+from .routers import usuarios, roles,turnos,ausencias, festivos
 from .routers import usuarios
 from .database import engine
-from .models import base, rol, usuario, ausencia, turno, festivo
+from .models import base
 
 # Crear tablas si no existen (solo en desarrollo)
 # En producción usar Alembic
@@ -28,6 +28,7 @@ app.include_router(usuarios.router)
 app.include_router(roles.router)
 app.include_router(turnos.router)
 app.include_router(ausencias.router)
+app.include_router(festivos.router)
 
 @app.get("/")
 def read_root():

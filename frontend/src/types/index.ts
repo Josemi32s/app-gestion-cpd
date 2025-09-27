@@ -53,3 +53,19 @@ export interface Ausencia {
   descripcion: string | null;
   created_at: string;
 }
+
+export interface Festivo {
+  id: number;
+  dia_mes: string; // "DD/MM"
+  descripcion: string;
+  tipo: string; // "Nacional" o "Madrid"
+  estado: string;
+  created_at: string;
+}
+
+export interface FestivoCreate {
+  dia_mes: string;
+  descripcion: string;
+  tipo: string;
+  estado: string;
+}

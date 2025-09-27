@@ -25,7 +25,7 @@ const UserList = () => {
   const handleActivarUsuario = async (usuarioId: number) => {
     try {
       await updateUsuario(usuarioId, { estado: 'activo' });
-      toast.success('✅ Usuario activado correctamente');
+      toast.success('Usuario activado correctamente');
       refetch();
     } catch (err: any) {
       toast.error('❌ Error al activar usuario: ' + (err.response?.data?.detail || err.message));

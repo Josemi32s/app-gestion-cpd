@@ -144,6 +144,7 @@ const UserEditForm = ({ usuario, roles, onSave, onCancel }: UserEditFormProps) =
             name="nombres"
             value={formData.nombres}
             onChange={handleChange}
+            autoFocus
             required
             className={`mt-1 block w-full border rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 ${
               errors.nombres ? 'border-red-500 bg-red-50' : 'border-gray-300 focus:border-blue-500'

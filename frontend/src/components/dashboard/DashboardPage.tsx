@@ -3,9 +3,10 @@ import { useState } from 'react';
 import TabGroup from '../ui/TabGroup';
 import TurnosExcelView from './TurnosExcelView';
 import UserListViewWrapper from './UserListViewWrapper';
+import FestivosList from '../festivos/FestivosList';
 
 const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios' | 'festivos'>('turnos');
 
   return (
     <div className="p-10 size-min mx-auto">
@@ -14,11 +15,12 @@ const DashboardPage = () => {
       <TabGroup
         tabs={[
           { id: 'turnos', label: '📅 Turnos' },
-          { id: 'usuarios', label: '👥 Usuarios' }
+          { id: 'usuarios', label: '👥 Usuarios' },
+          { id: 'festivos', label: '🎉 Festivos' }
         ]}
         activeTab={activeTab}
         onTabChange={(tabId: string) => {
-          if (tabId === 'turnos' || tabId === 'usuarios') {
+          if (tabId === 'turnos' || tabId === 'usuarios' || tabId === 'festivos') {
             setActiveTab(tabId);
           }
         }}
@@ -27,6 +29,7 @@ const DashboardPage = () => {
       <div className="mt-6">
         {activeTab === 'turnos' && <TurnosExcelView />}
         {activeTab === 'usuarios' && <UserListViewWrapper />}
+         {activeTab === 'festivos' && <FestivosList />}
       </div>
     </div>
   );

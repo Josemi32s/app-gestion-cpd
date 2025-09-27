@@ -6,6 +6,8 @@ import CellSelectorModal from '../calendar/CellSelectorModal';
 import { asignarCumpleanosMes } from '../../services/turnosApi';
 import type { Usuario, Turno } from '../../types';
 import { exportToExcel } from '../../utils/exportToExcel';
+import { getFestivos} from '../../services/festivosApi';
+
 
 const getDaysOfMonth = (year: number, month: number) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -44,7 +46,42 @@ const TurnosExcelView = () => {
   const [selectedYear, setSelectedYear] = useState<number>(2025);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
 
+  const [festivos, setFestivos] = useState<Set<string>>(new Set());
+
   const { turnos, loading: loadingTurnos, refetch: refetchTurnos } = useTurnosPorMes(selectedYear, selectedMonth);
+
+useEffect(() => {
+  const cargarFestivos = async () => {
+    try {
+      const festivosData = await getFestivos();
+      const festivosSet = new Set<string>();
+      
+      festivosData.forEach(festivo => {
+        // Solo festivos activos
+        if (festivo.estado === 'activo') {
+          // Verificar si el festivo está en el mes actual
+          const [dia, mes] = festivo.dia_mes.split('/').map(Number);
+          if (mes - 1 === selectedMonth) { // mes - 1 porque selectedMonth es 0-11
+            // Crear fecha completa para comparar con las fechas de los días
+            const fechaCompleta = `${selectedYear}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            festivosSet.add(fechaCompleta);
+          }
+        }
+      });
+      
+      setFestivos(festivosSet);
+    } catch (error) {
+      console.error('Error al cargar festivos:', error);
+    }
+  };
+  
+  cargarFestivos();
+}, [selectedYear, selectedMonth]);
+
+// Función para verificar si una fecha es festivo
+const esFestivo = (fecha: string) => {
+  return festivos.has(fecha);
+};
 
   useEffect(() => {
     const aplicarCumpleanosAuto = async () => {
@@ -58,6 +95,8 @@ const TurnosExcelView = () => {
     
     aplicarCumpleanosAuto();
   }, [selectedYear, selectedMonth]);
+
+
 
   // ✅ Event listener global para mouse up
   useEffect(() => {
@@ -145,7 +184,11 @@ const TurnosExcelView = () => {
   exportToExcel(exportData);
   };
 
-  const getCellColor = (turno: string | null, esReten: boolean) => {
+  const getCellColor = (turno: string | null, esReten: boolean, esFestivo: boolean) => {
+      if (esFestivo) {
+    return 'bg-green-200 border border-green-400';
+  }
+
     if (esReten) return 'bg-blue-200 border border-blue-400';
     if (!turno) return 'bg-white border border-gray-300';
     if (turno === 'v' || turno === 'c') return 'bg-yellow-100 border border-yellow-300';
@@ -275,6 +318,12 @@ const TurnosExcelView = () => {
   <tr>
     {days.map((day, index) => {
       const isWeekend = day.isWeekend;
+      const esFestivoDia = esFestivo(day.date);
+  const headerColor = esFestivoDia 
+    ? 'bg-green-200 text-green-800' 
+    : isWeekend 
+      ? 'text-red-600 font-bold' 
+      : 'text-gray-500';
       return (
         <th 
           key={`name-${index}`} 
@@ -285,7 +334,8 @@ const TurnosExcelView = () => {
               : 'text-gray-500'
           } ${
             hoverFecha === day.date ? 'highlight-column-header' : ''
-          }`}
+          } ${headerColor}
+          `}
         >
           <div className="text-xs font-medium">{getDayName(day.date)}</div>
         </th>
@@ -325,13 +375,13 @@ const TurnosExcelView = () => {
             const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
             const turno = turnoObj ? turnoObj.turno : null;
             const esReten = turnoObj ? turnoObj.es_reten : false;
-            
+            const esFestivoDia = esFestivo(day.date);
             return (
               <td
                 key={`${usuario.id}-${day.date}`}
                 className={`
                   border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
-                  ${getCellColor(turno, esReten)}
+                  ${getCellColor(turno, esReten,esFestivoDia)}
                   ${hoverUsuarioId === usuario.id ? 'highlight-jefe-cell' : ''}
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
@@ -386,13 +436,13 @@ const TurnosExcelView = () => {
             const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
             const turno = turnoObj ? turnoObj.turno : null;
             const esReten = turnoObj ? turnoObj.es_reten : false;
-            
+            const esFestivoDia = esFestivo(day.date);
             return (
               <td
                 key={`${usuario.id}-${day.date}`}
                 className={`
                   border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
-                  ${getCellColor(turno, esReten)}
+                  ${getCellColor(turno, esReten,esFestivoDia)}
                   ${hoverUsuarioId === usuario.id ? 'highlight-operador-cell' : ''}
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
@@ -447,13 +497,13 @@ const TurnosExcelView = () => {
             const turnoObj = turnosMap.get(day.date)?.get(usuario.id);
             const turno = turnoObj ? turnoObj.turno : null;
             const esReten = turnoObj ? turnoObj.es_reten : false;
-            
+            const esFestivoDia = esFestivo(day.date);
             return (
               <td
                 key={`${usuario.id}-${day.date}`}
                 className={`
                   border border-gray-300 px-2 py-2 text-center cursor-pointer text-xs font-bold
-                  ${getCellColor(turno, esReten)}
+                  ${getCellColor(turno, esReten,esFestivoDia)}
                   ${hoverUsuarioId === usuario.id ? 'highlight-emc-cell' : ''}
                   ${hoverFecha === day.date ? 'highlight-column' : ''}
                 `}
