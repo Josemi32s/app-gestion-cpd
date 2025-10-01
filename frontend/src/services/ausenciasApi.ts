@@ -1,5 +1,5 @@
 // src/services/ausenciasApi.ts
-import { api } from './api';
+/*import { api } from './api';
 import type { Ausencia } from '../types';
 
 // ✅ CREAR AUSENCIA
@@ -12,4 +12,4 @@ export const crearAusencia = async (data: {
 }) => {
   const response = await api.post<Ausencia>('/ausencias/', data);
   return response.data;
-};
+};*/

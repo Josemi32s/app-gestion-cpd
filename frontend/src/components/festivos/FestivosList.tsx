@@ -131,14 +131,14 @@ const FestivosList = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="w-full"> {/* ✅ Elimina max-w-4xl, ya está en DashboardPage */}
       <Toaster />
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gestión de Festivos</h1>
+      <div className="flex justify-between items-center mb-4"> {/* ✅ mb-4 en lugar de mb-6 */}
+        <h1 className="text-xl font-bold text-gray-800">Gestión de Festivos</h1> {/* ✅ text-xl y alineado a la izquierda */}
         <button
           onClick={() => handleOpenModal()}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition"
         >
           + Nuevo Festivo
         </button>
@@ -147,7 +147,7 @@ const FestivosList = () => {
       <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg mb-4 w-fit">
         <button
           onClick={() => setActiveTab('activos')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+          className={`px-3 py-1 text-xs font-medium rounded-md transition ${ /* ✅ px-3 py-1 text-xs */
             activeTab === 'activos'
               ? 'bg-white text-blue-700 shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
@@ -157,7 +157,7 @@ const FestivosList = () => {
         </button>
         <button
           onClick={() => setActiveTab('inactivos')}
-          className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+          className={`px-3 py-1 text-xs font-medium rounded-md transition ${ /* ✅ px-3 py-1 text-xs */
             activeTab === 'inactivos'
               ? 'bg-white text-blue-700 shadow-sm'
               : 'text-gray-600 hover:text-gray-800'
@@ -168,11 +168,11 @@ const FestivosList = () => {
       </div>
 
       <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por mes:</label>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Filtrar por mes:</label> {/* ✅ text-xs mb-1 */}
         <select
           value={filtroMes}
           onChange={(e) => setFiltroMes(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Todos los meses</option>
           {Array.from({ length: 12 }, (_, i) => {
@@ -187,67 +187,69 @@ const FestivosList = () => {
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {festivosFiltrados.length > 0 ? (
-              festivosFiltrados.map(festivo => (
-                <tr key={festivo.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {festivo.dia_mes}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {festivo.descripcion}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {festivo.tipo}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      festivo.estado === 'activo' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {festivo.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button
-                      onClick={() => handleOpenModal(festivo)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleToggleEstado(festivo)}
-                      className={`${
+        <div className="w-full overflow-x-hidden"> {/* ✅ Elimina scroll horizontal */}
+          <table className="w-full table-fixed"> {/* ✅ w-full + table-fixed */}
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Fecha</th> {/* ✅ px-2 py-2 text-[10px] */}
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {festivosFiltrados.length > 0 ? (
+                festivosFiltrados.map(festivo => (
+                  <tr key={festivo.id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2 whitespace-nowrap text-[11px] font-medium text-gray-900"> {/* ✅ px-2 py-2 text-[11px] */}
+                      {festivo.dia_mes}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-[11px] text-gray-500">
+                      {festivo.descripcion}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-[11px] text-gray-500">
+                      {festivo.tipo}
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap">
+                      <span className={`px-1.5 py-0.5 text-[10px] leading-4 font-semibold rounded-full ${ /* ✅ px-1.5 py-0.5 text-[10px] */
                         festivo.estado === 'activo' 
-                          ? 'text-red-600 hover:text-red-900' 
-                          : 'text-green-600 hover:text-green-900'
-                      }`}
-                    >
-                      {festivo.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                    </button>
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {festivo.estado === 'activo' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 whitespace-nowrap text-[11px] font-medium">
+                      <button
+                        onClick={() => handleOpenModal(festivo)}
+                        className="text-blue-600 hover:text-blue-900 mr-2 text-[10px]" /* ✅ text-[10px] */
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleToggleEstado(festivo)}
+                        className={`${
+                          festivo.estado === 'activo' 
+                            ? 'text-red-600 hover:text-red-900' 
+                            : 'text-green-600 hover:text-green-900'
+                        } text-[10px]`} /* ✅ text-[10px] */
+                      >
+                        {festivo.estado === 'activo' ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-2 py-2 text-center text-[11px] text-gray-500"> {/* ✅ px-2 py-2 text-[11px] */}
+                    No hay festivos {activeTab} en {filtroMes ? `el mes seleccionado` : 'la lista'}.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
-                  No hay festivos {activeTab} en {filtroMes ? `el mes seleccionado` : 'la lista'}.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <Modal
@@ -255,7 +257,7 @@ const FestivosList = () => {
         onClose={() => setShowModal(false)}
         title={editingFestivo ? "Editar Festivo" : "Crear Nuevo Festivo"}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3"> {/* ✅ space-y-3 en lugar de space-y-4 */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Fecha (DD/MM) *</label>
             <input
@@ -265,9 +267,9 @@ const FestivosList = () => {
               value={formData.dia_mes}
               onChange={(e) => setFormData({...formData, dia_mes: e.target.value})}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2.5 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" /* ✅ py-1.5 px-2.5 text-sm */
             />
-            <p className="mt-1 text-xs text-gray-500">Formato: DD/MM (ej: 01/01)</p>
+            <p className="mt-1 text-[10px] text-gray-500">Formato: DD/MM (ej: 01/01)</p> {/* ✅ text-[10px] */}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Descripción *</label>
@@ -276,7 +278,7 @@ const FestivosList = () => {
               value={formData.descripcion}
               onChange={(e) => setFormData({...formData, descripcion: e.target.value})}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2.5 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>
@@ -284,7 +286,7 @@ const FestivosList = () => {
             <select
               value={formData.tipo}
               onChange={(e) => setFormData({...formData, tipo: e.target.value})}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2.5 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="Nacional">Nacional</option>
               <option value="Madrid">Madrid</option>
@@ -297,7 +299,7 @@ const FestivosList = () => {
               <select
                 value={formData.estado}
                 onChange={(e) => setFormData({...formData, estado: e.target.value})}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2.5 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="activo">Activo</option>
                 <option value="inactivo">Inactivo</option>
@@ -310,23 +312,23 @@ const FestivosList = () => {
                 type="text"
                 value="Activo"
                 disabled
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-100 text-gray-500 cursor-not-allowed"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-1.5 px-2.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
               />
               <input type="hidden" name="estado" value="activo" />
             </div>
           )}
           
-          <div className="pt-4 flex justify-end space-x-3">
+          <div className="pt-3 flex justify-end space-x-2"> {/* ✅ pt-3 space-x-2 */}
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="px-3 py-1.5 border border-gray-300 rounded-md text-[11px] font-medium text-gray-700 hover:bg-gray-50" /* ✅ px-3 py-1.5 text-[11px] */
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
+              className="px-3 py-1.5 bg-blue-600 border border-transparent rounded-md text-[11px] font-medium text-white hover:bg-blue-700"
             >
               {editingFestivo ? 'Actualizar' : 'Crear'}
             </button>

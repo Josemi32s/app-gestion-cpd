@@ -1,5 +1,5 @@
 # backend/app/models/turno.py
-from sqlalchemy import Column, Integer, Date, String, Boolean, ForeignKey, TIMESTAMP, func
+from sqlalchemy import Column, Integer, Date, String, Boolean, ForeignKey, TIMESTAMP, func, UniqueConstraint
 from sqlalchemy.orm import relationship
 from .base import Base
 
@@ -9,7 +9,7 @@ class Turno(Base):
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     fecha = Column(Date, nullable=False)
-    turno = Column(String(10), nullable=False)  # M, T, N, FM1, etc.
+    turno = Column(String(10), nullable=False)
     generado_automático = Column(Boolean, default=False)
     modificado_manual = Column(Boolean, default=False)
     es_reten = Column(Boolean, default=False)
@@ -19,7 +19,5 @@ class Turno(Base):
 
     usuario = relationship("Usuario")
 
-    __table_args__ = (
-        # Un usuario no puede tener dos turnos el mismo día
-        {'sqlite_autoincrement': True}  # Solo si usas SQLite, opcional
-    )
+    # ✅ ¡AGREGA ESTA LÍNEA!
+    __table_args__ = (UniqueConstraint('usuario_id', 'fecha', name='uq_usuario_fecha'),)

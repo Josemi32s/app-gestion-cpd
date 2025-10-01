@@ -20,10 +20,11 @@ interface ExportData {
   month: number;
   usuarios: Usuario[];
   turnos: Map<string, Map<number, Turno>>;
+  festivos: Set<string>; // ✅ Agregado: conjunto de fechas festivas
 }
 
 export const exportToExcel = async (data: ExportData) => {
-  const { year, month, usuarios, turnos } = data;
+  const { year, month, usuarios, turnos, festivos } = data;
 
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Turnos");
@@ -52,45 +53,56 @@ export const exportToExcel = async (data: ExportData) => {
     alignment: { horizontal: "center", vertical: "middle" },
   };
 
-const headerRow = worksheet.addRow(["Rol", "Usuario / Día", ...days]);
-headerRow.eachCell((cell, colNumber) => {
-  // Estilo base para todas las celdas del encabezado
-  const baseStyle = {
-    font: { bold: true, color: { argb: "FFFFFFFF" } },
-    fill: {
-      type: "pattern" as const,
-      pattern: "solid" as const,
-      fgColor: { argb: "FF444444" },
-    },
-    alignment: { horizontal: "center" as const, vertical: "middle" as const },
-    border: getFullBorder(),
-  };
+  // 🔹 Encabezado con días
+  const headerRow = worksheet.addRow(["Rol", "Usuario / Día", ...days]);
+  headerRow.eachCell((cell, colNumber) => {
+    const baseStyle = {
+      font: { bold: true, color: { argb: "FFFFFFFF" } },
+      fill: {
+        type: "pattern" as const,
+        pattern: "solid" as const,
+        fgColor: { argb: "FF444444" },
+      },
+      alignment: { horizontal: "center" as const, vertical: "middle" as const },
+      border: getFullBorder(),
+    };
 
-  // Si es una celda de día (columna 3 en adelante)
-  if (colNumber >= 3) {
-    const dayIndex = colNumber - 3;
-    const day = days[dayIndex];
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const dayOfWeek = new Date(dateStr).getDay();
-    
-    // Verificar si es fin de semana (0 = Domingo, 6 = Sábado)
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      // Fondo rojo para fines de semana
-      cell.style = {
-        ...baseStyle,
-        fill: {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "F86363" }, // Rojo
-        },
-      };
+    if (colNumber >= 3) {
+      const dayIndex = colNumber - 3;
+      const day = days[dayIndex];
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const dayOfWeek = new Date(dateStr).getDay();
+
+      // ✅ Verificar si es festivo
+      const esFestivo = festivos.has(dateStr);
+
+      if (esFestivo) {
+        // Fondo verde para festivos (prioridad sobre fin de semana)
+        cell.style = {
+          ...baseStyle,
+          fill: {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "90EE90" }, // Verde claro
+          },
+        };
+      } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+        // Fondo rojo para fines de semana
+        cell.style = {
+          ...baseStyle,
+          fill: {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "F86363" }, // Rojo
+          },
+        };
+      } else {
+        cell.style = baseStyle;
+      }
     } else {
       cell.style = baseStyle;
     }
-  } else {
-    cell.style = baseStyle;
-  }
-});
+  });
 
   // 🔹 Usuarios ordenados por rol
   const jefes = usuarios.filter((u) => u.rol_id === 1);
@@ -141,6 +153,7 @@ headerRow.eachCell((cell, colNumber) => {
             day
           ).padStart(2, "0")}`;
           const turno = turnos.get(dateStr)?.get(usuario.id);
+          const esFestivo = festivos.has(dateStr); // ✅ Verificar festivo
 
           if (turno) {
             if (turno.turno === "d") {
@@ -158,6 +171,16 @@ headerRow.eachCell((cell, colNumber) => {
                 fgColor: { argb: getFillColor(turno.turno, turno.es_reten) },
               };
             }
+          }
+
+          // ✅ Si es festivo, aplicar fondo verde SOBRE cualquier otro color
+          if (esFestivo) {
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "90EE90" }, // Verde claro
+            };
+            cell.font = { bold: true, color: { argb: "FF000000" } };
           }
         }
       });

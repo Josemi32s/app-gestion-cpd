@@ -9,15 +9,15 @@ import type { Usuario } from '../../types';
 interface CellSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void; // ← Esta prop es importante
+  onSuccess?: () => void;
   usuario: Usuario;
-  fechasSeleccionadas: string[];
+  fechasSeleccionadas: string[]; // Solo usado para TurnosTab y título
 }
 
 const CellSelectorModal: React.FC<CellSelectorModalProps> = ({
   isOpen,
   onClose,
-  onSuccess, // ← Desestructuramos onSuccess
+  onSuccess,
   usuario,
   fechasSeleccionadas
 }) => {
@@ -25,11 +25,10 @@ const CellSelectorModal: React.FC<CellSelectorModalProps> = ({
 
   const handleTabChange = (tabId: string) => {
     if (tabId === 'turnos' || tabId === 'ausencias') {
-      setActiveTab(tabId);
+      setActiveTab(tabId as 'turnos' | 'ausencias');
     }
   };
 
-  // ✅ Usamos onSuccess si existe, si no, usamos onClose
   const handleSuccess = () => {
     if (onSuccess) {
       onSuccess();
@@ -38,11 +37,21 @@ const CellSelectorModal: React.FC<CellSelectorModalProps> = ({
     }
   };
 
+  // ✅ Mostrar rango en el título solo si hay múltiples días
+  const getTitulo = () => {
+    if (fechasSeleccionadas.length === 1) {
+      return `Asignar a ${usuario.nombres} (${fechasSeleccionadas[0]})`;
+    }
+    const minFecha = fechasSeleccionadas.reduce((a, b) => a < b ? a : b);
+    const maxFecha = fechasSeleccionadas.reduce((a, b) => a > b ? a : b);
+    return `Asignar a ${usuario.nombres} (${minFecha} - ${maxFecha})`;
+  };
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Asignar a ${usuario.nombres} (${fechasSeleccionadas.length} días)`}
+      title={getTitulo()}
     >
       <TabGroup
         tabs={[
@@ -58,14 +67,14 @@ const CellSelectorModal: React.FC<CellSelectorModalProps> = ({
           <TurnosTab
             usuario={usuario}
             fechas={fechasSeleccionadas}
-            onSuccess={handleSuccess} // ✅ Pasamos handleSuccess
+            onSuccess={handleSuccess}
           />
         )}
         {activeTab === 'ausencias' && (
           <AusenciasTab
             usuario={usuario}
-            fechas={fechasSeleccionadas}
-            onSuccess={handleSuccess} // ✅ Pasamos handleSuccess
+            fechasSeleccionadas={fechasSeleccionadas}
+            onSuccess={handleSuccess}
           />
         )}
       </div>

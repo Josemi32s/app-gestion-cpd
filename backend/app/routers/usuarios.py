@@ -1,6 +1,7 @@
 # backend/app/routers/usuarios.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import asc
 from typing import List
 from app.schemas import usuario as schemas
 from app.models import usuario as models
@@ -18,7 +19,7 @@ def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(database
 
 @router.get("/", response_model=List[schemas.Usuario])
 def listar_usuarios(skip: int = 0, limit: int = 100, db: Session = Depends(database.get_db)):
-    return db.query(models.Usuario).offset(skip).limit(limit).all()
+    return db.query(models.Usuario).order_by(asc(models.Usuario.id)).offset(skip).limit(limit).all()
 
 @router.get("/{usuario_id}", response_model=schemas.Usuario)
 def obtener_usuario(usuario_id: int, db: Session = Depends(database.get_db)):

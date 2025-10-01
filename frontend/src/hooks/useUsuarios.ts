@@ -1,14 +1,14 @@
 // src/hooks/useUsuarios.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api, getRoles } from '../services/api';
-import type{ Usuario, Rol } from '../types';
+import type { Usuario, Rol } from '../types';
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ordenOriginalIds, setOrdenOriginalIds] = useState<number[]>([]); // ← IDs en orden de primera carga
+  const [ordenOriginalIds, setOrdenOriginalIds] = useState<number[]>([]);
 
   const fetchUsuarios = async () => {
     try {
@@ -44,31 +44,36 @@ export const useUsuarios = () => {
     refetch();
   }, []);
 
-  // Función que reordena los usuarios según el orden original
-  const getUsuariosOrdenados = () => {
+  // ✅ Usamos useMemo para optimizar el reordenamiento
+  const usuariosOrdenados = useMemo(() => {
     if (ordenOriginalIds.length === 0) return usuarios;
 
+    // Crear un mapa para acceso O(1)
     const mapUsuarios = new Map(usuarios.map(u => [u.id, u]));
     const ordenados: Usuario[] = [];
+    const idsYaAgregados = new Set<number>();
 
+    // 1. Agregar usuarios en el orden original
     for (const id of ordenOriginalIds) {
       if (mapUsuarios.has(id)) {
         ordenados.push(mapUsuarios.get(id)!);
+        idsYaAgregados.add(id);
       }
     }
 
-    // Añadir usuarios nuevos que no estaban en el orden original (al final)
+    // 2. Agregar nuevos usuarios (que no estaban en el orden original) al final
     for (const usuario of usuarios) {
-      if (!ordenOriginalIds.includes(usuario.id)) {
+      if (!idsYaAgregados.has(usuario.id)) {
         ordenados.push(usuario);
+        idsYaAgregados.add(usuario.id); // Evitar duplicados
       }
     }
 
     return ordenados;
-  };
+  }, [usuarios, ordenOriginalIds]);
 
   return {
-    usuarios: getUsuariosOrdenados(), // ← SIEMPRE devolvemos en orden original
+    usuarios: usuariosOrdenados, // ✅ Siempre en orden estable
     roles,
     loading,
     error,

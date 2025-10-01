@@ -9,7 +9,6 @@ class TurnoBase(BaseModel):
     turno: str
     es_reten: bool = False
     generado_automático: bool = False
-    modificado_manual: bool = False
     estado: str = "activo"
 
 class TurnoCreate(TurnoBase):
@@ -21,11 +20,29 @@ class TurnoUpdate(BaseModel):
     turno: Optional[str] = None
     es_reten: Optional[bool] = None
     generado_automático: Optional[bool] = None
-    modificado_manual: Optional[bool] = None
     estado: Optional[str] = None
 
 class Turno(TurnoBase):
     id: int
+    modificado_manual: bool
+    class Config:
+        from_attributes = True  
+
+class TurnoDisplay(BaseModel):
+    id: Optional[int] = None
+    usuario_id: int
+    fecha: date
+    turno: str
+    es_reten: bool
+    generado_automático: bool
+    modificado_manual: bool
+    estado: str
 
     class Config:
-        from_attributes = True  # orm_mode fue renombrado en Pydantic V2
+        from_attributes = True
+
+class AusenciaRangoCreate(BaseModel):
+    usuario_id: int
+    fecha_inicio: date
+    fecha_fin: date
+    tipo: str  

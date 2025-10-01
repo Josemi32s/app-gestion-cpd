@@ -9,9 +9,8 @@ const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios' | 'festivos'>('turnos');
 
   return (
-    <div className="p-10 size-min mx-auto">
+    <div className="p-6 max-w-7xl mx-auto"> {/* ✅ Ancho máximo fijo */}
       <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">🛠️ Gestión Operación - CPD</h1>
-
       <TabGroup
         tabs={[
           { id: 'turnos', label: '📅 Turnos' },
@@ -25,14 +24,12 @@ const DashboardPage = () => {
           }
         }}
       />
-
       <div className="mt-6">
         {activeTab === 'turnos' && <TurnosExcelView />}
         {activeTab === 'usuarios' && <UserListViewWrapper />}
-         {activeTab === 'festivos' && <FestivosList />}
+        {activeTab === 'festivos' && <FestivosList />}
       </div>
     </div>
   );
 };
-
 export default DashboardPage;
