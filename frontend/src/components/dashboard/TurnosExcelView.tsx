@@ -11,17 +11,11 @@ import { getFestivos } from "../../services/festivosApi";
 const getDaysOfMonth = (year: number, month: number) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days: { day: number; date: string; isWeekend: boolean }[] = [];
-
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
-      day
-    ).padStart(2, "0")}`;
-    const isWeekend =
-      new Date(year, month, day).getDay() === 0 ||
-      new Date(year, month, day).getDay() === 6;
+    const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const isWeekend = new Date(year, month, day).getDay() === 0 || new Date(year, month, day).getDay() === 6;
     days.push({ day, date: dateStr, isWeekend });
   }
-
   return days;
 };
 
@@ -37,28 +31,28 @@ const TurnosExcelView = () => {
   const [selectedFechas, setSelectedFechas] = useState<string[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // ✅ Estado para crosshair highlighting
+  // Estado para crosshair highlighting
   const [hoverUsuarioId, setHoverUsuarioId] = useState<number | null>(null);
   const [hoverFecha, setHoverFecha] = useState<string | null>(null);
 
-  // ✅ Estados para selección de rango
+  // Estados para selección de rango
   const [startSelection, setStartSelection] = useState<{
     usuario: Usuario;
     fecha: string;
   } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
-  // ✅ Gestión dinámica de años y navegación entre meses
+  // Gestión dinámica de años y navegación entre meses
   const MIN_YEAR = 2025;
   const [selectedYear, setSelectedYear] = useState<number>(MIN_YEAR);
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
-  // Lista de años disponible: desde MIN_YEAR hasta (selectedYear + 1) para permitir avanzar
+  // Lista de años disponible: desde MIN_YEAR hasta (selectedYear + 1) para permitir avanzar  
   const availableYears = useMemo(() => {
     const years: number[] = [];
     for (let y = MIN_YEAR; y <= selectedYear + 1; y++) years.push(y);
     return years;
   }, [selectedYear]);
-  const isMinMonth = selectedYear === MIN_YEAR && selectedMonth === 0; // ✅ Enero 2025
+  const isMinMonth = selectedYear === MIN_YEAR && selectedMonth === 0; // Enero 2025      
 
   const [festivos, setFestivos] = useState<Set<string>>(new Set());
 
@@ -118,7 +112,7 @@ const TurnosExcelView = () => {
     aplicarCumpleanosAuto();
   }, [selectedYear, selectedMonth]);
 
-  // ✅ Event listener global para mouse up
+  // Event listener global para mouse up
   useEffect(() => {
     const handleGlobalMouseUp = () => {
       if (isSelecting && selectedFechas.length > 0) {
@@ -154,7 +148,7 @@ const TurnosExcelView = () => {
     }
   };
 
-  // ✅ Manejadores para selección de rango
+  // Manejadores para selección de rango
   const handleMouseDown = (usuario: Usuario, fecha: string) => {
     setStartSelection({ usuario, fecha });
     setIsSelecting(true);
@@ -295,23 +289,45 @@ const TurnosExcelView = () => {
           </select>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2">
           <button
             onClick={goToPreviousMonth}
             disabled={isMinMonth}
-            className={`px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm font-medium transition 
-              ${isMinMonth 
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-200 hover:bg-gray-300"}`}
-              
+            aria-label="Mes anterior"
+            className={`inline-flex items-center justify-center h-10 w-10 rounded-md border border-gray-300 bg-white shadow-sm transition text-gray-600 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 ${isMinMonth ? 'opacity-40 cursor-not-allowed hover:bg-white hover:text-gray-600' : ''}`}
           >
-            ◄ Mes anterior
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M13.5 8.5 9.5 12l4 3.5" />
+            </svg>
+            <span className="sr-only">Mes anterior</span>
           </button>
           <button
             onClick={goToNextMonth}
-            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm font-medium transition"
+            aria-label="Mes siguiente"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-md border border-gray-300 bg-white shadow-sm transition text-gray-600 hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            Mes siguiente ►
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="m10.5 8.5 4 3.5-4 3.5" />
+            </svg>
+            <span className="sr-only">Mes siguiente</span>
           </button>
           <button
             onClick={handleExportToExcel}
@@ -327,7 +343,7 @@ const TurnosExcelView = () => {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M12 10v6m0 0l-3-3m3 3 3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
             Exportar Excel
@@ -336,73 +352,68 @@ const TurnosExcelView = () => {
       </div>
       <div className="w-full">
         <div className="w-full align-middle">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table className="w-full table-fixed divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="border border-gray-300 px-1 py-1 bg-gray-100 text-center w-12"
-                    rowSpan={2}
-                  >
-                    <div className="transform -rotate-90 origin-center text-xs">
-                      Rol
-                    </div>
-                  </th>
-                  <th
-                    scope="col"
-                    className="border border-gray-300 px-1 py-1 bg-gray-100 text-center w-24"
-                    rowSpan={2}
-                  >
-                    <div className="text-xs font-medium">Usuario</div>{" "}
-                    {/* ✅ text-xs */}
-                  </th>
-                  {days.map((day, index) => (
-                    <th
-                      key={`num-${index}`}
-                      scope="col"
-                      className={`border border-gray-300 px-0.5 py-1 bg-gray-100 text-center w-[30px] ${
-                        /* ✅ Ancho fijo pequeño + padding reducido */
-                        hoverFecha === day.date ? "highlight-column-header" : ""
-                      }`}
-                    >
-                      <div className="text-xs font-medium">{day.day}</div>{" "}
-                      {/* ✅ text-xs */}
-                    </th>
-                  ))}
-                </tr>
-                <tr>
-                  {days.map((day, index) => {
-                    const isWeekend = day.isWeekend;
-                    const esFestivoDia = esFestivo(day.date);
-                    const headerColor = esFestivoDia
-                      ? "bg-green-200 text-green-800"
-                      : isWeekend
-                      ? "text-red-600 font-bold"
-                      : "text-gray-500";
-                    return (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <div className="shadow border border-gray-200 sm:rounded-lg overflow-hidden">
+                <table className="min-w-[1100px] w-full table-fixed divide-y divide-gray-200 text-[10px] sm:text-xs">
+                  <thead className="bg-gray-50">
+                    <tr>
                       <th
-                        key={`name-${index}`}
                         scope="col"
-                        className={`border border-gray-300 px-0.5 py-1 bg-gray-100 text-center w-[30px] ${
-                          isWeekend ? "text-red-600 font-bold" : "text-gray-500"
-                        } ${
-                          hoverFecha === day.date
-                            ? "highlight-column-header"
-                            : ""
-                        } ${headerColor}`}
+                        className="hidden sm:table-cell border border-gray-300 px-1 py-1 bg-gray-100 text-center w-12"
+                        rowSpan={2}
                       >
-                        <div className="text-[10px] font-medium">
-                          {" "}
-                          {/* ✅ text-[10px] */}
-                          {getDayName(day.date)}
+                        <div className="transform -rotate-90 origin-center text-[10px] sm:text-xs">
+                          Rol
                         </div>
                       </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+                      <th
+                        scope="col"
+                        className="border border-gray-300 px-1 py-1 bg-gray-100 text-center w-28 sm:w-24"
+                        rowSpan={2}
+                      >
+                        <div className="text-[11px] sm:text-xs font-medium">Usuario</div>
+                      </th>
+                      {days.map((day, index) => (
+                        <th
+                          key={`num-${index}`}
+                          scope="col"
+                          className={`border border-gray-300 px-0.5 py-1 bg-gray-100 text-center w-[30px] ${
+                            hoverFecha === day.date ? "highlight-column-header" : ""
+                          }`}
+                        >
+                          <div className="text-[10px] font-medium">{day.day}</div>
+                        </th>
+                      ))}
+                    </tr>
+                    <tr>
+                      {days.map((day, index) => {
+                        const isWeekend = day.isWeekend;
+                        const esFestivoDia = esFestivo(day.date);
+                        const headerColor = esFestivoDia
+                          ? "bg-green-200 text-green-800"
+                          : isWeekend
+                          ? "text-red-600 font-bold"
+                          : "text-gray-500";
+                        return (
+                          <th
+                            key={`name-${index}`}
+                            scope="col"
+                            className={`border border-gray-300 px-0.5 py-1 bg-gray-100 text-center w:[30px] ${
+                              hoverFecha === day.date
+                                ? "highlight-column-header"
+                                : ""
+                            } ${headerColor}`}
+                          >
+                            <div className="text-[9px] sm:text-[10px] font-medium">
+                              {getDayName(day.date)}
+                            </div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                 {/* JEFES DE TURNO */}
                 {usuariosActivosPorGrupo.jefes.length > 0 && (
                   <>
@@ -418,7 +429,7 @@ const TurnosExcelView = () => {
                         {index === 0 && (
                           <td
                             rowSpan={usuariosActivosPorGrupo.jefes.length}
-                            className="border border-gray-300 px-1 py-1 text-[10px] font-bold text-gray-900 whitespace-nowrap text-center align-middle bg-blue-50"
+                            className="hidden sm:table-cell border border-gray-300 px-1 py-1 text-[10px] font-bold text-gray-900 whitespace-nowrap text-center align-middle bg-blue-50"
                           >
                             <div className="transform -rotate-90 origin-center whitespace-nowrap text-blue-800 text-[10px]">
                               Jefes de Turno
@@ -426,10 +437,9 @@ const TurnosExcelView = () => {
                           </td>
                         )}
 
-                        <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-24">
-                          {" "}
-                          {/* ✅ text-[10px] + w-24 */}
-                          {usuario.nombres} {usuario.apellidos}
+                        <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-28 sm:w-24">
+                          <span className="sm:hidden block truncate max-w-[90px]">{usuario.nombres.split(' ')[0]}</span>
+                          <span className="hidden sm:block">{usuario.nombres} {usuario.apellidos}</span>
                         </td>
 
                         {days.map((day) => {
@@ -442,12 +452,17 @@ const TurnosExcelView = () => {
                           return (
                             <td
                               key={`${usuario.id}-${day.date}`}
-                              className={`
-                  border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold
-                  ${getCellColor(turno, esReten, esFestivoDia)}
-                  ${hoverUsuarioId === usuario.id ? "highlight-jefe-cell" : ""}
-                  ${hoverFecha === day.date ? "highlight-column" : ""}
-                `}
+                              className={`border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold ${getCellColor(
+                                turno,
+                                esReten,
+                                esFestivoDia
+                              )} ${
+                                hoverUsuarioId === usuario.id
+                                  ? "highlight-jefe-cell"
+                                  : ""
+                              } ${
+                                hoverFecha === day.date ? "highlight-column" : ""
+                              }`}
                               onClick={() =>
                                 handleCellSelect(usuario, day.date)
                               }
@@ -490,10 +505,8 @@ const TurnosExcelView = () => {
                         >
                           {index === 0 && (
                             <td
-                              rowSpan={
-                                usuariosActivosPorGrupo.operadores.length
-                              }
-                              className="border border-gray-300 px-1 py-1 text-[10px] text-center align-middle bg-green-50"
+                              rowSpan={usuariosActivosPorGrupo.operadores.length}
+                              className="hidden sm:table-cell border border-gray-300 px-1 py-1 text-[10px] text-center align-middle bg-green-50"
                             >
                               <div className="transform -rotate-90 origin-center whitespace-nowrap font-bold text-green-800 text-[10px]">
                                 Operadores
@@ -501,8 +514,9 @@ const TurnosExcelView = () => {
                             </td>
                           )}
 
-                          <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-24">
-                            {usuario.nombres} {usuario.apellidos}
+                          <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-28 sm:w-24">
+                            <span className="sm:hidden block truncate max-w-[90px]">{usuario.nombres.split(' ')[0]}</span>
+                            <span className="hidden sm:block">{usuario.nombres} {usuario.apellidos}</span>
                           </td>
 
                           {days.map((day) => {
@@ -517,16 +531,17 @@ const TurnosExcelView = () => {
                             return (
                               <td
                                 key={`${usuario.id}-${day.date}`}
-                                className={`
-                  border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold
-                  ${getCellColor(turno, esReten, esFestivoDia)}
-                  ${
-                    hoverUsuarioId === usuario.id
-                      ? "highlight-operador-cell"
-                      : ""
-                  }
-                  ${hoverFecha === day.date ? "highlight-column" : ""}
-                `}
+                                className={`border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold ${getCellColor(
+                                  turno,
+                                  esReten,
+                                  esFestivoDia
+                                )} ${
+                                  hoverUsuarioId === usuario.id
+                                    ? "highlight-operador-cell"
+                                    : ""
+                                } ${
+                                  hoverFecha === day.date ? "highlight-column" : ""
+                                }`}
                                 onClick={() =>
                                   handleCellSelect(usuario, day.date)
                                 }
@@ -570,7 +585,7 @@ const TurnosExcelView = () => {
                         {index === 0 && (
                           <td
                             rowSpan={usuariosActivosPorGrupo.emc.length}
-                            className="border border-gray-300 px-1 py-1 text-[10px] text-center align-middle bg-purple-50"
+                            className="hidden sm:table-cell border border-gray-300 px-1 py-1 text-[10px] text-center align-middle bg-purple-50"
                           >
                             <div className="transform -rotate-90 origin-center whitespace-nowrap font-bold text-purple-800 text-[10px]">
                               EMC
@@ -578,8 +593,9 @@ const TurnosExcelView = () => {
                           </td>
                         )}
 
-                        <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-24">
-                          {usuario.nombres} {usuario.apellidos}
+                        <td className="border border-gray-300 px-1 py-1 text-[10px] font-medium text-gray-900 whitespace-nowrap w-28 sm:w-24">
+                          <span className="sm:hidden block truncate max-w-[90px]">{usuario.nombres.split(' ')[0]}</span>
+                          <span className="hidden sm:block">{usuario.nombres} {usuario.apellidos}</span>
                         </td>
 
                         {days.map((day) => {
@@ -592,12 +608,17 @@ const TurnosExcelView = () => {
                           return (
                             <td
                               key={`${usuario.id}-${day.date}`}
-                              className={`
-                  border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold
-                  ${getCellColor(turno, esReten, esFestivoDia)}
-                  ${hoverUsuarioId === usuario.id ? "highlight-emc-cell" : ""}
-                  ${hoverFecha === day.date ? "highlight-column" : ""}
-                `}
+                              className={`border border-gray-300 px-0.5 py-1 text-center cursor-pointer text-[10px] font-bold ${getCellColor(
+                                turno,
+                                esReten,
+                                esFestivoDia
+                              )} ${
+                                hoverUsuarioId === usuario.id
+                                  ? "highlight-emc-cell"
+                                  : ""
+                              } ${
+                                hoverFecha === day.date ? "highlight-column" : ""
+                              }`}
                               onClick={() =>
                                 handleCellSelect(usuario, day.date)
                               }
@@ -625,8 +646,10 @@ const TurnosExcelView = () => {
                     ))}
                   </>
                 )}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </div>

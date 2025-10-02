@@ -52,7 +52,7 @@ const AusenciasTab: React.FC<AusenciasTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="bg-blue-50 p-3 rounded-md">
+      <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
         <p className="text-sm text-blue-800">
           Rango seleccionado: <strong>{rangoTexto}</strong>
         </p>
@@ -64,7 +64,7 @@ const AusenciasTab: React.FC<AusenciasTabProps> = ({
           <select
             value={tipo}
             onChange={(e) => setTipo(e.target.value as any)}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           >
             {tiposAusencia.map(t => (
@@ -76,7 +76,7 @@ const AusenciasTab: React.FC<AusenciasTabProps> = ({
         <button
           type="submit"
           disabled={loading}
-          className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+          className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           {loading ? 'Asignando...' : `Asignar Ausencia a ${fechasSeleccionadas.length} días`}
         </button>

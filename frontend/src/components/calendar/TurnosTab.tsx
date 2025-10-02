@@ -50,11 +50,11 @@ const TurnosTab: React.FC<TurnosTabProps> = ({ usuario, fechas, onSuccess }) => 
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Turno</label>
+  <label className="block text-sm font-medium text-gray-700">Turno</label>
         <select
           value={turno}
           onChange={(e) => setTurno(e.target.value)}
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           {turnos.map(t => (
             <option key={t.value} value={t.value}>{t.label}</option>
@@ -68,9 +68,9 @@ const TurnosTab: React.FC<TurnosTabProps> = ({ usuario, fechas, onSuccess }) => 
           id="reten"
           checked={esReten}
           onChange={(e) => setEsReten(e.target.checked)}
-          className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
         />
-        <label htmlFor="reten" className="ml-2 block text-sm text-gray-700">
+  <label htmlFor="reten" className="ml-2 block text-sm text-gray-700">
           Marcar como Retén
         </label>
       </div>
@@ -79,7 +79,7 @@ const TurnosTab: React.FC<TurnosTabProps> = ({ usuario, fechas, onSuccess }) => 
         <button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           {loading ? 'Asignando...' : `Asignar a ${fechas.length} días`}
         </button>

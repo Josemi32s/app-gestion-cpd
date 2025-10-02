@@ -1,34 +1,28 @@
 // src/components/dashboard/DashboardPage.tsx
 import { useState } from 'react';
-import TabGroup from '../ui/TabGroup';
 import TurnosExcelView from './TurnosExcelView';
 import UserListViewWrapper from './UserListViewWrapper';
 import FestivosList from '../festivos/FestivosList';
+import MainNav from '../ui/MainNav';
+import ReportesPage from '../reportes/ReportesPage';
 
 const DashboardPage = () => {
-  const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios' | 'festivos'>('turnos');
+  const [activeTab, setActiveTab] = useState<'turnos' | 'usuarios' | 'festivos' | 'reportes'>('turnos');
 
   return (
-    <div className="p-6 max-w-7xl mx-auto"> {/* ✅ Ancho máximo fijo */}
-      <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">🛠️ Gestión Operación - CPD</h1>
-      <TabGroup
-        tabs={[
-          { id: 'turnos', label: '📅 Turnos' },
-          { id: 'usuarios', label: '👥 Usuarios' },
-          { id: 'festivos', label: '🎉 Festivos' }
-        ]}
-        activeTab={activeTab}
-        onTabChange={(tabId: string) => {
-          if (tabId === 'turnos' || tabId === 'usuarios' || tabId === 'festivos') {
-            setActiveTab(tabId);
-          }
+  <div className="min-h-screen">
+      <MainNav
+        active={activeTab}
+        onChange={(tabId) => {
+          if (tabId === 'turnos' || tabId === 'usuarios' || tabId === 'festivos' || tabId === 'reportes') setActiveTab(tabId);
         }}
       />
-      <div className="mt-6">
+      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
         {activeTab === 'turnos' && <TurnosExcelView />}
         {activeTab === 'usuarios' && <UserListViewWrapper />}
-        {activeTab === 'festivos' && <FestivosList />}
-      </div>
+  {activeTab === 'festivos' && <FestivosList />}
+  {activeTab === 'reportes' && <ReportesPage />}
+      </main>
     </div>
   );
 };

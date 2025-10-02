@@ -1,8 +1,7 @@
 # backend/app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import usuarios, roles,turnos, festivos
-from .routers import usuarios
+from .routers import usuarios, roles,turnos, festivos,reportes
 from .database import engine
 from .models import base
 
@@ -29,6 +28,7 @@ app.include_router(roles.router)
 app.include_router(turnos.router)
 #app.include_router(ausencias.router)
 app.include_router(festivos.router)
+app.include_router(reportes.router)
 
 @app.get("/")
 def read_root():

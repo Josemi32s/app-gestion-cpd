@@ -7,9 +7,13 @@ interface ModalProps {
   title: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  /**
+   * Si es true permite cerrar haciendo clic en el backdrop. Por defecto desactivado según nueva UX.
+   */
+  closeOnBackdropClick?: boolean;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md', closeOnBackdropClick = false }) => {
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -19,19 +23,44 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white rounded-lg p-6 w-full ${sizeClasses[size]} max-h-screen overflow-y-auto`}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm opacity-100 animate-fadeIn"
+        {...(closeOnBackdropClick ? { onClick: onClose } : {})}
+        aria-hidden="true"
+      />
+      {/* Panel */}
+      <div
+        className={`relative w-full ${sizeClasses[size]} max-h-[92vh] animate-scaleIn overflow-hidden rounded-xl border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-white shadow-xl shadow-slate-300/40`}
+        role="dialog" aria-modal="true" aria-labelledby="modal-title"
+      >
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-200/70 bg-white/85 px-6 py-4 backdrop-blur-sm">
+          <h2 id="modal-title" className="text-lg md:text-xl font-semibold tracking-tight text-slate-800">
+            {title}
+          </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 text-2xl"
+            className="group rounded-md p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+            aria-label="Cerrar modal"
           >
-            &times;
+            <svg className="w-5 h-5" stroke="currentColor" strokeWidth="1.8" fill="none" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
-        {children}
+        <div className="custom-scrollbar overflow-y-auto px-6 py-5 pb-8 text-slate-700">
+          {children}
+        </div>
       </div>
+      <style>{`
+        .animate-fadeIn{animation:fadeIn .18s ease-out;}
+        .animate-scaleIn{animation:scaleIn .22s cubic-bezier(.16,.84,.44,1);}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+        .custom-scrollbar::-webkit-scrollbar{width:8px}
+        .custom-scrollbar::-webkit-scrollbar-track{background:transparent}
+        .custom-scrollbar::-webkit-scrollbar-thumb{background:rgba(100,116,139,.35);border-radius:4px}
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,.55)}
+      `}</style>
     </div>
   );
 };
